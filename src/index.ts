@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { env } from './config/env';
 import logger from './config/logger';
+import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
 const PORT = env.PORT;
@@ -34,6 +35,9 @@ app.get('/', (req, res) => {
     status: 'running',
   });
 });
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
