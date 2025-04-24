@@ -7,6 +7,9 @@ import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
 import healthRouter from './routes/health';
+import userRoutes from './routes/userRoutes';
+import contentRoutes from './routes/contentRoutes';
+import socialRoutes from './routes/socialRoutes';
 
 const app = express();
 const PORT = env.PORT;
@@ -38,6 +41,11 @@ app.get('/', (req, res) => {
 
 // Health check routes
 app.use('/health', healthRouter);
+
+// API routes
+app.use('/api/users', userRoutes);
+app.use('/api/content', contentRoutes);
+app.use('/api/social', socialRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
