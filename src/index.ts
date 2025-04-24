@@ -1,25 +1,20 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
 import { env } from './config/env';
 import logger from './config/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
+import { securityConfig, corsOptions } from './config/security';
 
 const app = express();
 const PORT = env.PORT;
 
 // Security middleware
-app.use(helmet());
+app.use(securityConfig);
 
 // CORS configuration
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json());
