@@ -1,16 +1,40 @@
 import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config();
 
-export const env = {
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '3000', 10),
-  CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
-  DATABASE_URL: process.env.DATABASE_URL || '',
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  JWT_SECRET: process.env.JWT_SECRET || '',
-  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || '',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m',
-  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
-};
+// Environment variable validation schema
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.string().transform(Number).default('3000'),
+  CORS_ORIGIN: z.string().default('*'),
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  REDIS_URL: z.string().default('redis://localhost:6379'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 characters'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().transform(Number).optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  EMAIL_FROM: z.string().email().optional(),
+  MAX_FILE_SIZE: z.string().transform(Number).default('5242880'),
+  UPLOAD_DIR: z.string().default('uploads'),
+  RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
+  RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
+});
+
+// Validate and parse environment variables
+const parseResult = envSchema.safeParse(process.env);
+
+if (!parseResult.success) {
+  console.error('❌ Invalid environment variables:');
+  parseResult.error.errors.forEach((error) => {
+    console.error(`  - ${error.path.join('.')}: ${error.message}`);
+  });
+  process.exit(1);
+}
+
+export const env = parseResult.data;
 
