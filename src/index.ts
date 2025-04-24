@@ -6,6 +6,7 @@ import logger from './config/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
+import healthRouter from './routes/health';
 
 const app = express();
 const PORT = env.PORT;
@@ -34,6 +35,9 @@ app.get('/', (req, res) => {
     status: 'running',
   });
 });
+
+// Health check routes
+app.use('/health', healthRouter);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
