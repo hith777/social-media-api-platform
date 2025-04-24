@@ -2,13 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import { env } from './config/env';
+import logger from './config/logger';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT;
 
 // Security middleware
 app.use(helmet());
@@ -16,7 +14,7 @@ app.use(helmet());
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: env.CORS_ORIGIN,
     credentials: true,
   })
 );
@@ -39,7 +37,7 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.info(`Server is running on port ${PORT} in ${env.NODE_ENV} mode`);
 });
 
 export default app;
