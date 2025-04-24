@@ -5,6 +5,7 @@ import compression from 'compression';
 import { env } from './config/env';
 import logger from './config/logger';
 import { errorHandler } from './middleware/errorHandler';
+import { apiLimiter } from './middleware/rateLimiter';
 
 const app = express();
 const PORT = env.PORT;
@@ -26,6 +27,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Compression middleware
 app.use(compression());
+
+// Rate limiting middleware
+app.use(apiLimiter);
 
 // Basic route
 app.get('/', (req, res) => {
