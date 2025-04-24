@@ -37,9 +37,6 @@ coverage/
 # Prisma
 prisma/migrations/
 
-# Docker
-.dockerignore
-
 # Temporary files
 tmp/
 temp/
