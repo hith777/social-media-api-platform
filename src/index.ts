@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
 import healthRouter from './routes/health';
+import docsRouter from './routes/docs';
 import userRoutes from './routes/userRoutes';
 import contentRoutes from './routes/contentRoutes';
 import socialRoutes from './routes/socialRoutes';
@@ -41,6 +42,9 @@ app.get('/', (req, res) => {
 
 // Health check routes
 app.use('/health', healthRouter);
+
+// API documentation
+app.use('/api-docs', docsRouter);
 
 // API routes
 app.use('/api/users', userRoutes);
