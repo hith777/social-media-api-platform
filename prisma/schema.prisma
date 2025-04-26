@@ -12,20 +12,48 @@ datasource db {
 
 // User model - foundation for authentication and profiles
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  avatar    String?
-  bio       String?
-  isEmailVerified Boolean @default(false)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  username          String    @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  avatar            String?
+  bio               String?
+  isEmailVerified   Boolean   @default(false)
+  emailVerificationToken String?
+  emailVerifiedAt   DateTime?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  refreshToken      String?
+  blockedUsers      Block[]   @relation("BlockedBy")
+  blockedByUsers    Block[]   @relation("BlockedUser")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime? // Soft delete
 
+  @@index([email])
+  @@index([username])
+  @@index([isActive])
+  @@index([deletedAt])
   @@map("users")
+}
+
+// Block model for user blocking functionality
+model Block {
+  id          String   @id @default(cuid())
+  blockerId   String
+  blockedId   String
+  blocker     User     @relation("BlockedBy", fields: [blockerId], references: [id])
+  blockedUser User     @relation("BlockedUser", fields: [blockedId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("blocks")
 }
 
 // Post model - foundation for content service
