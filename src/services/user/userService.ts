@@ -1,7 +1,8 @@
 import prisma from '../../config/database';
-import { hashPassword, validatePasswordStrength } from '../../utils/password';
+import { hashPassword, validatePasswordStrength, comparePassword } from '../../utils/password';
 import { AppError } from '../../middleware/errorHandler';
 import { User } from '@prisma/client';
+import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../utils/jwt';
 
 export class UserService {
   /**
@@ -111,5 +112,120 @@ export class UserService {
         deletedAt: true,
       },
     });
+  }
+
+  /**
+   * Login user with email/username and password
+   */
+  async login(
+    identifier: string,
+    password: string
+  ): Promise<{
+    user: Omit<User, 'password' | 'refreshToken'>;
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    // Find user by email or username
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [{ email: identifier }, { username: identifier }],
+      },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError('User account is inactive', 403);
+    }
+
+    // Check if user is deleted
+    if (user.deletedAt) {
+      throw new AppError('User account has been deleted', 403);
+    }
+
+    // Verify password
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    // Generate tokens
+    const tokenPayload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+    };
+
+    const accessToken = generateAccessToken(tokenPayload);
+    const refreshToken = generateRefreshToken(tokenPayload);
+
+    // Update user with refresh token and last login
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        refreshToken,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    // Return user without sensitive data
+    const { password: _, refreshToken: __, ...userWithoutSensitive } = user;
+
+    return {
+      user: userWithoutSensitive,
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshAccessToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    // Find user by refresh token
+    const user = await prisma.user.findFirst({
+      where: { refreshToken },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid refresh token', 401);
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      throw new AppError('User account is inactive', 403);
+    }
+
+    // Check if user is deleted
+    if (user.deletedAt) {
+      throw new AppError('User account has been deleted', 403);
+    }
+
+    // Generate new tokens
+    const tokenPayload: TokenPayload = {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+    };
+
+    const newAccessToken = generateAccessToken(tokenPayload);
+    const newRefreshToken = generateRefreshToken(tokenPayload);
+
+    // Update refresh token in database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken: newRefreshToken },
+    });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
   }
 }

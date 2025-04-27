@@ -16,6 +16,17 @@ const registerSchema = z.object({
   lastName: z.string().min(1).max(50).optional(),
 });
 
+// Login schema
+const loginSchema = z.object({
+  identifier: z.string().min(1, 'Email or username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+// Refresh token schema
+const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token is required'),
+});
+
 /**
  * @route   POST /api/users/register
  * @desc    Register a new user
@@ -30,6 +41,48 @@ export const register = [
       success: true,
       message: 'User registered successfully',
       data: user,
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/users/login
+ * @desc    Login user and get tokens
+ * @access  Public
+ */
+export const login = [
+  validateBody(loginSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { identifier, password } = req.body;
+    const result = await userService.login(identifier, password);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      },
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/users/refresh-token
+ * @desc    Refresh access token
+ * @access  Public
+ */
+export const refreshToken = [
+  validateBody(refreshTokenSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { refreshToken: token } = req.body;
+    const result = await userService.refreshAccessToken(token);
+
+    res.json({
+      success: true,
+      message: 'Token refreshed successfully',
+      data: result,
     });
   }),
 ];
