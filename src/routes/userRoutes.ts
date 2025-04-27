@@ -1,9 +1,11 @@
 import { Router } from 'express';
-// User routes - to be implemented in Phase 2
+import { register } from '../controllers/userController';
+import { authLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
-// Placeholder routes will be added in Phase 2
+// Public routes
+router.post('/register', authLimiter, register);
 
 export default router;
 
