@@ -228,4 +228,71 @@ export class UserService {
       refreshToken: newRefreshToken,
     };
   }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(
+    userId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      bio?: string;
+    }
+  ): Promise<Omit<User, 'password' | 'refreshToken'>> {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        bio: data.bio,
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        isEmailVerified: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  /**
+   * Get user profile by ID (public profile)
+   */
+  async getProfile(userId: string): Promise<Omit<User, 'password' | 'refreshToken' | 'email'> | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        isEmailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  /**
+   * Get own profile (includes email)
+   */
+  async getOwnProfile(userId: string): Promise<Omit<User, 'password' | 'refreshToken'> | null> {
+    return this.findById(userId);
+  }
 }

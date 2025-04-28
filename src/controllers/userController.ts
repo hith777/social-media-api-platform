@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user/userService';
 import { asyncHandler } from '../middleware/errorHandler';
-import { validateBody } from '../middleware/validator';
+import { validateBody, validateParams } from '../middleware/validator';
 import { z } from 'zod';
-import { emailSchema, passwordSchema, usernameSchema } from '../utils/validation';
+import { emailSchema, passwordSchema, usernameSchema, idParamSchema } from '../utils/validation';
+import { authenticate } from '../middleware/auth';
 
 const userService = new UserService();
 
@@ -83,6 +84,83 @@ export const refreshToken = [
       success: true,
       message: 'Token refreshed successfully',
       data: result,
+    });
+  }),
+];
+
+// Update profile schema
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1).max(50).optional(),
+  lastName: z.string().min(1).max(50).optional(),
+  bio: z.string().max(500).optional(),
+});
+
+/**
+ * @route   GET /api/users/me
+ * @desc    Get current user's profile
+ * @access  Private
+ */
+export const getOwnProfile = [
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const user = await userService.getOwnProfile(req.user.id);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  }),
+];
+
+/**
+ * @route   PUT /api/users/me
+ * @desc    Update current user's profile
+ * @access  Private
+ */
+export const updateOwnProfile = [
+  authenticate,
+  validateBody(updateProfileSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const user = await userService.updateProfile(req.user.id, req.body);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user,
+    });
+  }),
+];
+
+/**
+ * @route   GET /api/users/:id
+ * @desc    Get user profile by ID (public)
+ * @access  Public
+ */
+export const getProfile = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const user = await userService.getProfile(id);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    res.json({
+      success: true,
+      data: user,
     });
   }),
 ];
