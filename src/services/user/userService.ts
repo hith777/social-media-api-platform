@@ -3,8 +3,16 @@ import { hashPassword, validatePasswordStrength, comparePassword } from '../../u
 import { AppError } from '../../middleware/errorHandler';
 import { User } from '@prisma/client';
 import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../utils/jwt';
+import { generateEmailVerificationToken } from '../../utils/tokens';
+import { EmailService } from '../email/emailService';
 
 export class UserService {
+  private emailService: EmailService;
+
+  constructor() {
+    this.emailService = new EmailService();
+  }
+
   /**
    * Create a new user
    */
@@ -43,6 +51,9 @@ export class UserService {
     // Hash password
     const hashedPassword = await hashPassword(data.password);
 
+    // Generate email verification token
+    const emailVerificationToken = generateEmailVerificationToken();
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -51,6 +62,7 @@ export class UserService {
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
+        emailVerificationToken,
       },
       select: {
         id: true,
@@ -67,6 +79,12 @@ export class UserService {
         updatedAt: true,
         deletedAt: true,
       },
+    });
+
+    // Send verification email (async, don't wait)
+    this.emailService.sendVerificationEmail(data.email, emailVerificationToken).catch((error) => {
+      // Log error but don't fail user creation
+      console.error('Failed to send verification email:', error);
     });
 
     return user;
@@ -294,5 +312,59 @@ export class UserService {
    */
   async getOwnProfile(userId: string): Promise<Omit<User, 'password' | 'refreshToken'> | null> {
     return this.findById(userId);
+  }
+
+  /**
+   * Verify email with token
+   */
+  async verifyEmail(token: string): Promise<void> {
+    const user = await prisma.user.findFirst({
+      where: { emailVerificationToken: token },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid verification token', 400);
+    }
+
+    if (user.isEmailVerified) {
+      throw new AppError('Email already verified', 400);
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
+        emailVerificationToken: null,
+      },
+    });
+  }
+
+  /**
+   * Resend email verification
+   */
+  async resendVerificationEmail(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.isEmailVerified) {
+      throw new AppError('Email already verified', 400);
+    }
+
+    // Generate new verification token
+    const emailVerificationToken = generateEmailVerificationToken();
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken },
+    });
+
+    // Send verification email
+    await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
   }
 }

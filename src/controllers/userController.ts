@@ -164,3 +164,47 @@ export const getProfile = [
     });
   }),
 ];
+
+// Email verification schema
+const verifyEmailSchema = z.object({
+  token: z.string().min(1, 'Verification token is required'),
+});
+
+/**
+ * @route   POST /api/users/verify-email
+ * @desc    Verify user email with token
+ * @access  Public
+ */
+export const verifyEmail = [
+  validateBody(verifyEmailSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { token } = req.body;
+    await userService.verifyEmail(token);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/users/resend-verification
+ * @desc    Resend email verification
+ * @access  Private
+ */
+export const resendVerification = [
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    await userService.resendVerificationEmail(req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Verification email sent successfully',
+    });
+  }),
+];
