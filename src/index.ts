@@ -28,6 +28,9 @@ app.use(express.urlencoded({ extended: true }));
 // Compression middleware
 app.use(compression());
 
+// Serve static files (uploads)
+app.use('/uploads', express.static('uploads'));
+
 // Rate limiting middleware
 app.use(apiLimiter);
 

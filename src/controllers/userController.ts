@@ -256,3 +256,32 @@ export const resetPassword = [
     });
   }),
 ];
+
+/**
+ * @route   POST /api/users/me/avatar
+ * @desc    Upload user avatar
+ * @access  Private
+ */
+export const uploadAvatar = [
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    if (!req.file) {
+      throw new Error('No file uploaded');
+    }
+
+    // Get relative path from uploads directory
+    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+
+    const user = await userService.updateAvatar(req.user.id, avatarPath);
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: user,
+    });
+  }),
+];

@@ -10,8 +10,10 @@ import {
   resendVerification,
   requestPasswordReset,
   resetPassword,
+  uploadAvatar,
 } from '../controllers/userController';
 import { authLimiter } from '../middleware/rateLimiter';
+import { uploadAvatar: uploadAvatarMiddleware, handleUploadError } from '../middleware/upload';
 
 const router = Router();
 
@@ -27,6 +29,7 @@ router.get('/:id', getProfile);
 // Protected routes
 router.get('/me', getOwnProfile);
 router.put('/me', updateOwnProfile);
+router.post('/me/avatar', uploadAvatarMiddleware.single('avatar'), handleUploadError, uploadAvatar);
 router.post('/resend-verification', resendVerification);
 
 export default router;

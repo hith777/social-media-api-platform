@@ -5,6 +5,8 @@ import { User } from '@prisma/client';
 import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../utils/jwt';
 import { generateEmailVerificationToken, generatePasswordResetToken } from '../../utils/tokens';
 import { EmailService } from '../email/emailService';
+import fs from 'fs';
+import path from 'path';
 
 export class UserService {
   private emailService: EmailService;
@@ -442,5 +444,47 @@ export class UserService {
         passwordResetExpires: null,
       },
     });
+  }
+
+  /**
+   * Update user avatar
+   */
+  async updateAvatar(userId: string, avatarPath: string): Promise<Omit<User, 'password' | 'refreshToken'>> {
+    // Get current user to delete old avatar
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar: true },
+    });
+
+    // Delete old avatar file if it exists
+    if (user?.avatar) {
+      const oldAvatarPath = path.join(process.cwd(), user.avatar);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Update user with new avatar path
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar: avatarPath },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        avatar: true,
+        bio: true,
+        isEmailVerified: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+      },
+    });
+
+    return updatedUser;
   }
 }
