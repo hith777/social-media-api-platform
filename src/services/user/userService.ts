@@ -3,7 +3,7 @@ import { hashPassword, validatePasswordStrength, comparePassword } from '../../u
 import { AppError } from '../../middleware/errorHandler';
 import { User } from '@prisma/client';
 import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../utils/jwt';
-import { generateEmailVerificationToken } from '../../utils/tokens';
+import { generateEmailVerificationToken, generatePasswordResetToken } from '../../utils/tokens';
 import { EmailService } from '../email/emailService';
 
 export class UserService {
@@ -366,5 +366,81 @@ export class UserService {
 
     // Send verification email
     await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+  }
+
+  /**
+   * Request password reset
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // Don't reveal if email exists for security
+    if (!user) {
+      return;
+    }
+
+    // Check if user is active
+    if (!user.isActive || user.deletedAt) {
+      return;
+    }
+
+    // Generate password reset token
+    const passwordResetToken = generatePasswordResetToken();
+    const passwordResetExpires = new Date();
+    passwordResetExpires.setHours(passwordResetExpires.getHours() + 1); // Token expires in 1 hour
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken,
+        passwordResetExpires,
+      },
+    });
+
+    // Send password reset email
+    await this.emailService.sendPasswordResetEmail(user.email, passwordResetToken);
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(newPassword);
+    if (!passwordValidation.isValid) {
+      throw new AppError(
+        `Password validation failed: ${passwordValidation.errors.join(', ')}`,
+        400
+      );
+    }
+
+    // Find user by reset token
+    const user = await prisma.user.findFirst({
+      where: { passwordResetToken: token },
+    });
+
+    if (!user) {
+      throw new AppError('Invalid or expired reset token', 400);
+    }
+
+    // Check if token has expired
+    if (user.passwordResetExpires && user.passwordResetExpires < new Date()) {
+      throw new AppError('Reset token has expired', 400);
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+    });
   }
 }

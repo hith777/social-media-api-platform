@@ -208,3 +208,51 @@ export const resendVerification = [
     });
   }),
 ];
+
+// Password reset request schema
+const requestPasswordResetSchema = z.object({
+  email: emailSchema,
+});
+
+// Password reset schema
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: passwordSchema,
+});
+
+/**
+ * @route   POST /api/users/forgot-password
+ * @desc    Request password reset
+ * @access  Public
+ */
+export const requestPasswordReset = [
+  validateBody(requestPasswordResetSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+    await userService.requestPasswordReset(email);
+
+    // Always return success to prevent email enumeration
+    res.json({
+      success: true,
+      message: 'If the email exists, a password reset link has been sent',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/users/reset-password
+ * @desc    Reset password with token
+ * @access  Public
+ */
+export const resetPassword = [
+  validateBody(resetPasswordSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    await userService.resetPassword(token, password);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+  }),
+];
