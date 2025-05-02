@@ -487,4 +487,70 @@ export class UserService {
 
     return updatedUser;
   }
+
+  /**
+   * Search users by username or email
+   */
+  async searchUsers(
+    query: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    users: Array<Omit<User, 'password' | 'refreshToken' | 'email'>>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    // Build search condition
+    const where = {
+      AND: [
+        {
+          OR: [
+            { username: { contains: query, mode: 'insensitive' as const } },
+            { firstName: { contains: query, mode: 'insensitive' as const } },
+            { lastName: { contains: query, mode: 'insensitive' as const } },
+          ],
+        },
+        { isActive: true },
+        { deletedAt: null },
+      ],
+    };
+
+    // Get users and total count
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          bio: true,
+          isEmailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: {
+          username: 'asc',
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
 }

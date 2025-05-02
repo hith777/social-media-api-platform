@@ -1,9 +1,15 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/user/userService';
 import { asyncHandler } from '../middleware/errorHandler';
-import { validateBody, validateParams } from '../middleware/validator';
+import { validateBody, validateParams, validateQuery } from '../middleware/validator';
 import { z } from 'zod';
-import { emailSchema, passwordSchema, usernameSchema, idParamSchema } from '../utils/validation';
+import {
+  emailSchema,
+  passwordSchema,
+  usernameSchema,
+  idParamSchema,
+  paginationSchema,
+} from '../utils/validation';
 import { authenticate } from '../middleware/auth';
 
 const userService = new UserService();
@@ -282,6 +288,48 @@ export const uploadAvatar = [
       success: true,
       message: 'Avatar uploaded successfully',
       data: user,
+    });
+  }),
+];
+
+// User search query schema
+const searchUsersQuerySchema = z.object({
+  query: z.string().min(1, 'Search query is required').max(100),
+  page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .refine((val) => val > 0 && val <= 50, {
+      message: 'Limit must be between 1 and 50',
+    }),
+});
+
+/**
+ * @route   GET /api/users/search
+ * @desc    Search users by username, first name, or last name
+ * @access  Public
+ */
+export const searchUsers = [
+  validateQuery(searchUsersQuerySchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { query, page = 1, limit = 10 } = req.query as {
+      query: string;
+      page?: number;
+      limit?: number;
+    };
+
+    const result = await userService.searchUsers(query, page, limit);
+
+    res.json({
+      success: true,
+      data: result.users,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
     });
   }),
 ];

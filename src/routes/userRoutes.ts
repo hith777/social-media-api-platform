@@ -11,6 +11,7 @@ import {
   requestPasswordReset,
   resetPassword,
   uploadAvatar,
+  searchUsers,
 } from '../controllers/userController';
 import { authLimiter } from '../middleware/rateLimiter';
 import { uploadAvatar: uploadAvatarMiddleware, handleUploadError } from '../middleware/upload';
@@ -24,6 +25,7 @@ router.post('/refresh-token', refreshToken);
 router.post('/verify-email', verifyEmail);
 router.post('/forgot-password', authLimiter, requestPasswordReset);
 router.post('/reset-password', resetPassword);
+router.get('/search', searchUsers);
 router.get('/:id', getProfile);
 
 // Protected routes
