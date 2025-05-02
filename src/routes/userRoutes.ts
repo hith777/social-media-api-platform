@@ -12,6 +12,9 @@ import {
   resetPassword,
   uploadAvatar,
   searchUsers,
+  blockUser,
+  unblockUser,
+  getBlockedUsers,
 } from '../controllers/userController';
 import { authLimiter } from '../middleware/rateLimiter';
 import { uploadAvatar: uploadAvatarMiddleware, handleUploadError } from '../middleware/upload';
@@ -33,6 +36,9 @@ router.get('/me', getOwnProfile);
 router.put('/me', updateOwnProfile);
 router.post('/me/avatar', uploadAvatarMiddleware.single('avatar'), handleUploadError, uploadAvatar);
 router.post('/resend-verification', resendVerification);
+router.post('/block', blockUser);
+router.post('/unblock', unblockUser);
+router.get('/blocked', getBlockedUsers);
 
 export default router;
 

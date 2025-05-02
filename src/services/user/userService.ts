@@ -553,4 +553,146 @@ export class UserService {
       totalPages,
     };
   }
+
+  /**
+   * Block a user
+   */
+  async blockUser(blockerId: string, blockedId: string): Promise<void> {
+    // Prevent self-blocking
+    if (blockerId === blockedId) {
+      throw new AppError('Cannot block yourself', 400);
+    }
+
+    // Check if user exists
+    const blockedUser = await prisma.user.findUnique({
+      where: { id: blockedId },
+    });
+
+    if (!blockedUser) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Check if already blocked
+    const existingBlock = await prisma.block.findUnique({
+      where: {
+        blockerId_blockedId: {
+          blockerId,
+          blockedId,
+        },
+      },
+    });
+
+    if (existingBlock) {
+      throw new AppError('User is already blocked', 409);
+    }
+
+    // Create block
+    await prisma.block.create({
+      data: {
+        blockerId,
+        blockedId,
+      },
+    });
+  }
+
+  /**
+   * Unblock a user
+   */
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    // Find and delete block
+    const block = await prisma.block.findUnique({
+      where: {
+        blockerId_blockedId: {
+          blockerId,
+          blockedId,
+        },
+      },
+    });
+
+    if (!block) {
+      throw new AppError('User is not blocked', 404);
+    }
+
+    await prisma.block.delete({
+      where: {
+        blockerId_blockedId: {
+          blockerId,
+          blockedId,
+        },
+      },
+    });
+  }
+
+  /**
+   * Get list of blocked users
+   */
+  async getBlockedUsers(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    users: Array<Omit<User, 'password' | 'refreshToken' | 'email'>>;
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [blocks, total] = await Promise.all([
+      prisma.block.findMany({
+        where: { blockerId: userId },
+        skip,
+        take: limit,
+        include: {
+          blockedUser: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              bio: true,
+              isEmailVerified: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.block.count({
+        where: { blockerId: userId },
+      }),
+    ]);
+
+    const users = blocks.map((block) => block.blockedUser);
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Check if a user is blocked by another user
+   */
+  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+    const block = await prisma.block.findUnique({
+      where: {
+        blockerId_blockedId: {
+          blockerId,
+          blockedId,
+        },
+      },
+    });
+
+    return !!block;
+  }
 }

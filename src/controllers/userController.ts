@@ -333,3 +333,99 @@ export const searchUsers = [
     });
   }),
 ];
+
+// Block user schema
+const blockUserSchema = z.object({
+  userId: z.string().min(1, 'User ID is required'),
+});
+
+// Get blocked users query schema
+const getBlockedUsersQuerySchema = z.object({
+  page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .refine((val) => val > 0 && val <= 50, {
+      message: 'Limit must be between 1 and 50',
+    }),
+});
+
+/**
+ * @route   POST /api/users/block
+ * @desc    Block a user
+ * @access  Private
+ */
+export const blockUser = [
+  authenticate,
+  validateBody(blockUserSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { userId } = req.body;
+    await userService.blockUser(req.user.id, userId);
+
+    res.json({
+      success: true,
+      message: 'User blocked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/users/unblock
+ * @desc    Unblock a user
+ * @access  Private
+ */
+export const unblockUser = [
+  authenticate,
+  validateBody(blockUserSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { userId } = req.body;
+    await userService.unblockUser(req.user.id, userId);
+
+    res.json({
+      success: true,
+      message: 'User unblocked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   GET /api/users/blocked
+ * @desc    Get list of blocked users
+ * @access  Private
+ */
+export const getBlockedUsers = [
+  authenticate,
+  validateQuery(getBlockedUsersQuerySchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { page = 1, limit = 10 } = req.query as {
+      page?: number;
+      limit?: number;
+    };
+
+    const result = await userService.getBlockedUsers(req.user.id, page, limit);
+
+    res.json({
+      success: true,
+      data: result.users,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
+  }),
+];
