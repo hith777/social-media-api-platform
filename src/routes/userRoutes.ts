@@ -15,6 +15,7 @@ import {
   blockUser,
   unblockUser,
   getBlockedUsers,
+  deleteAccount,
 } from '../controllers/userController';
 import { authLimiter } from '../middleware/rateLimiter';
 import { uploadAvatar: uploadAvatarMiddleware, handleUploadError } from '../middleware/upload';
@@ -34,6 +35,7 @@ router.get('/:id', getProfile);
 // Protected routes
 router.get('/me', getOwnProfile);
 router.put('/me', updateOwnProfile);
+router.delete('/me', deleteAccount);
 router.post('/me/avatar', uploadAvatarMiddleware.single('avatar'), handleUploadError, uploadAvatar);
 router.post('/resend-verification', resendVerification);
 router.post('/block', blockUser);

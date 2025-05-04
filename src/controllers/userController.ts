@@ -429,3 +429,24 @@ export const getBlockedUsers = [
     });
   }),
 ];
+
+/**
+ * @route   DELETE /api/users/me
+ * @desc    Delete user account (soft delete)
+ * @access  Private
+ */
+export const deleteAccount = [
+  authenticate,
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    await userService.deleteAccount(req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
+  }),
+];

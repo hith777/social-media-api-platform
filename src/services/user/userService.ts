@@ -695,4 +695,38 @@ export class UserService {
 
     return !!block;
   }
+
+  /**
+   * Soft delete user account
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.deletedAt) {
+      throw new AppError('Account already deleted', 400);
+    }
+
+    // Soft delete: set deletedAt timestamp
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+        refreshToken: null, // Invalidate refresh token
+      },
+    });
+
+    // Delete all blocks (both directions)
+    await prisma.block.deleteMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+    });
+  }
 }
