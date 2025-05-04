@@ -13,9 +13,7 @@ export const paginationSchema = z.object({
 });
 
 export const idParamSchema = z.object({
-  params: z.object({
-    id: z.string().min(1, 'ID is required'),
-  }),
+  id: z.string().min(1, 'ID is required'),
 });
 
 // Email validation
@@ -36,4 +34,5 @@ export const usernameSchema = z
   .min(3, 'Username must be at least 3 characters')
   .max(30, 'Username must be at most 30 characters')
   .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores');
+
 

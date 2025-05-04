@@ -8,7 +8,6 @@ import {
   passwordSchema,
   usernameSchema,
   idParamSchema,
-  paginationSchema,
 } from '../utils/validation';
 import { authenticate } from '../middleware/auth';
 
@@ -313,11 +312,12 @@ const searchUsersQuerySchema = z.object({
 export const searchUsers = [
   validateQuery(searchUsersQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
-    const { query, page = 1, limit = 10 } = req.query as {
+    const queryParams = req.query as unknown as {
       query: string;
       page?: number;
       limit?: number;
     };
+    const { query, page = 1, limit = 10 } = queryParams;
 
     const result = await userService.searchUsers(query, page, limit);
 

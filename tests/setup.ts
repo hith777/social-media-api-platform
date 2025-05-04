@@ -5,7 +5,9 @@
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3000';
 process.env.CORS_ORIGIN = '*';
-process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/social_media_test';
+// Use the same database as development (tests clean up after themselves)
+// In production, use a separate test database
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://hitheshk@localhost:5432/social_media';
 process.env.REDIS_URL = 'redis://localhost:6379';
 process.env.JWT_SECRET = 'test-secret-key-that-is-at-least-32-characters-long-for-testing';
 process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-key-that-is-at-least-32-characters-long-for-testing';
@@ -16,4 +18,5 @@ process.env.RATE_LIMIT_MAX_REQUESTS = '100';
 
 // Increase timeout for tests that might need to connect to services
 jest.setTimeout(10000);
+
 

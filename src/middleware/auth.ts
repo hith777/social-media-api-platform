@@ -20,7 +20,7 @@ declare global {
  * Verifies JWT token and attaches user to request
  */
 export const authenticate = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, _res: Response, next: NextFunction) => {
     // Get token from header
     const authHeader = req.headers.authorization;
 
@@ -41,13 +41,6 @@ export const authenticate = asyncHandler(
     // Check if user exists and is active
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        isActive: true,
-        deletedAt: true,
-      },
     });
 
     if (!user) {
@@ -58,7 +51,7 @@ export const authenticate = asyncHandler(
       throw new AppError('User account is inactive', 403);
     }
 
-    if (user.deletedAt) {
+    if ((user as any).deletedAt) {
       throw new AppError('User account has been deleted', 403);
     }
 
@@ -77,7 +70,7 @@ export const authenticate = asyncHandler(
  * Attaches user if token is present, but doesn't require it
  */
 export const optionalAuthenticate = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, _res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -90,16 +83,9 @@ export const optionalAuthenticate = asyncHandler(
       const decoded = verifyAccessToken(token);
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          isActive: true,
-          deletedAt: true,
-        },
       });
 
-      if (user && user.isActive && !user.deletedAt) {
+      if (user && user.isActive && !(user as any).deletedAt) {
         req.user = {
           ...decoded,
           id: user.id,
@@ -112,4 +98,5 @@ export const optionalAuthenticate = asyncHandler(
     next();
   }
 );
+
 

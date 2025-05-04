@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { Response, NextFunction } from 'express';
 import { env } from '../config/env';
 import { AppError } from './errorHandler';
 
@@ -17,10 +18,10 @@ if (!fs.existsSync(avatarDir)) {
 
 // Configure storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, avatarDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     // Generate unique filename: timestamp-random-originalname
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
@@ -30,7 +31,7 @@ const storage = multer.diskStorage({
 
 // File filter for images only
 const fileFilter = (
-  req: Express.Request,
+  _req: Express.Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
@@ -50,7 +51,7 @@ const fileFilter = (
 };
 
 // Configure multer
-export const uploadAvatar = multer({
+export const uploadAvatarMiddleware = multer({
   storage,
   fileFilter,
   limits: {
@@ -61,22 +62,25 @@ export const uploadAvatar = multer({
 // Middleware to handle upload errors
 export const handleUploadError = (
   err: Error,
-  req: Express.Request,
-  res: Express.Response,
-  next: Express.NextFunction
-) => {
+  _req: Express.Request,
+  res: Response,
+  next: NextFunction
+): void => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: `File too large. Maximum size is ${(env.MAX_FILE_SIZE || 5 * 1024 * 1024) / 1024 / 1024}MB`,
       });
+      return;
     }
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: err.message,
     });
+    return;
   }
   next(err);
 };
+
 

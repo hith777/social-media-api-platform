@@ -69,3 +69,4 @@ networks:
   social-media-network:
     driver: bridge
 
+

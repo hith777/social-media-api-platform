@@ -91,3 +91,4 @@ if [ "$DB_CREATED" = true ]; then
     echo "3. Run: npm run prisma:migrate"
 fi
 
+
