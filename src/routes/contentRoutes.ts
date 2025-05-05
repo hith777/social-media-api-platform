@@ -1,44 +1,10 @@
 import { Router } from 'express';
-import {
-  createPost,
-  getPost,
-  getFeed,
-  getUserPosts,
-  getPosts,
-  updatePost,
-  deletePost,
-  reportPost,
-} from '../controllers/contentController';
-import { authenticate, optionalAuthenticate } from '../middleware/auth';
-import {
-  uploadPostMediaMiddleware,
-  handleUploadError,
-} from '../middleware/upload';
+import { createPost } from '../controllers/contentController';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// Public routes
-router.get('/', optionalAuthenticate, getPosts);
-router.get('/:id', optionalAuthenticate, getPost);
-router.get('/user/:userId', optionalAuthenticate, getUserPosts);
-
 // Protected routes
-router.post(
-  '/',
-  authenticate,
-  uploadPostMediaMiddleware.array('media', 10),
-  handleUploadError,
-  createPost
-);
-router.get('/feed', authenticate, getFeed);
-router.put(
-  '/:id',
-  authenticate,
-  uploadPostMediaMiddleware.array('media', 10),
-  handleUploadError,
-  updatePost
-);
-router.delete('/:id', authenticate, deletePost);
-router.post('/:id/report', authenticate, reportPost);
+router.post('/', authenticate, createPost);
 
 export default router;
