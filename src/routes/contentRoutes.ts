@@ -1,10 +1,44 @@
 import { Router } from 'express';
-// Content routes - to be implemented in Phase 3
+import {
+  createPost,
+  getPost,
+  getFeed,
+  getUserPosts,
+  getPosts,
+  updatePost,
+  deletePost,
+  reportPost,
+} from '../controllers/contentController';
+import { authenticate, optionalAuthenticate } from '../middleware/auth';
+import {
+  uploadPostMediaMiddleware,
+  handleUploadError,
+} from '../middleware/upload';
 
 const router = Router();
 
-// Placeholder routes will be added in Phase 3
+// Public routes
+router.get('/', optionalAuthenticate, getPosts);
+router.get('/:id', optionalAuthenticate, getPost);
+router.get('/user/:userId', optionalAuthenticate, getUserPosts);
+
+// Protected routes
+router.post(
+  '/',
+  authenticate,
+  uploadPostMediaMiddleware.array('media', 10),
+  handleUploadError,
+  createPost
+);
+router.get('/feed', authenticate, getFeed);
+router.put(
+  '/:id',
+  authenticate,
+  uploadPostMediaMiddleware.array('media', 10),
+  handleUploadError,
+  updatePost
+);
+router.delete('/:id', authenticate, deletePost);
+router.post('/:id/report', authenticate, reportPost);
 
 export default router;
-
-

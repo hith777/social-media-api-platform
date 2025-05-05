@@ -51,7 +51,7 @@ app.use('/api-docs', docsRouter);
 
 // API routes
 app.use('/api/users', userRoutes);
-app.use('/api/content', contentRoutes);
+app.use('/api/posts', contentRoutes);
 app.use('/api/social', socialRoutes);
 
 // Error handling middleware (must be last)

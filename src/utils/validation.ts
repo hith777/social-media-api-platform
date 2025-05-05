@@ -35,4 +35,27 @@ export const usernameSchema = z
   .max(30, 'Username must be at most 30 characters')
   .regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores');
 
+// Post content validation
+export const postContentSchema = z
+  .string()
+  .min(1, 'Post content cannot be empty')
+  .max(5000, 'Post content cannot exceed 5000 characters');
+
+// Post visibility validation
+export const postVisibilitySchema = z.enum(['public', 'private', 'friends'], {
+  errorMap: () => ({ message: 'Visibility must be public, private, or friends' }),
+});
+
+// Media URLs validation
+export const mediaUrlsSchema = z
+  .array(z.string().url('Invalid media URL'))
+  .max(10, 'Maximum 10 media files allowed per post')
+  .optional();
+
+// Report reason validation
+export const reportReasonSchema = z
+  .string()
+  .min(1, 'Report reason is required')
+  .max(200, 'Report reason cannot exceed 200 characters');
+
 

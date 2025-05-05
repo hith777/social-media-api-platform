@@ -30,6 +30,7 @@ model User {
   refreshToken      String?
   blockedUsers      Block[]   @relation("BlockedBy")
   blockedByUsers    Block[]   @relation("BlockedUser")
+  posts             Post[]    @relation("PostAuthor")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime? // Soft delete
@@ -58,25 +59,46 @@ model Block {
 
 // Post model - foundation for content service
 model Post {
-  id        String   @id @default(cuid())
-  content   String
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String    @id @default(cuid())
+  content     String
+  authorId    String
+  author      User      @relation("PostAuthor", fields: [authorId], references: [id])
+  mediaUrls   String[]  @default([]) // Array of media file URLs
+  visibility  String    @default("public") // public, private, friends
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  comments    Comment[] @relation("PostComments")
+  likes       Like[]    @relation("PostLikes")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
+  @@index([authorId])
+  @@index([visibility])
+  @@index([isDeleted])
+  @@index([createdAt])
   @@map("posts")
 }
 
 // Comment model - foundation for nested comments
 model Comment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   content   String
   postId    String
+  post      Post      @relation("PostComments", fields: [postId], references: [id])
   authorId  String
   parentId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  likes     Like[]    @relation("CommentLikes")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([isDeleted])
   @@map("comments")
 }
 
@@ -85,9 +107,16 @@ model Like {
   id        String   @id @default(cuid())
   userId    String
   postId    String?
+  post      Post?    @relation("PostLikes", fields: [postId], references: [id])
   commentId String?
+  comment   Comment? @relation("CommentLikes", fields: [commentId], references: [id])
   createdAt DateTime @default(now())
 
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@index([userId])
+  @@index([postId])
+  @@index([commentId])
   @@map("likes")
 }
 
@@ -110,6 +139,8 @@ model Notification {
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@index([userId])
+  @@index([isRead])
   @@map("notifications")
 }
 
