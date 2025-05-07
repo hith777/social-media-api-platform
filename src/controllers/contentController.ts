@@ -36,9 +36,28 @@ export const createPost = [
       throw new Error('User not authenticated');
     }
 
+    // Handle uploaded files
+    let mediaUrls: string[] = [];
+    
+    // Get media URLs from uploaded files
+    if (req.files && Array.isArray(req.files)) {
+      mediaUrls = req.files.map((file: Express.Multer.File) => {
+        // Return relative URL path
+        return `/uploads/posts/${file.filename}`;
+      });
+    } else if (req.file) {
+      // Single file upload
+      mediaUrls = [`/uploads/posts/${req.file.filename}`];
+    }
+
+    // Merge with any URLs provided in body
+    if (req.body.mediaUrls && Array.isArray(req.body.mediaUrls)) {
+      mediaUrls = [...mediaUrls, ...req.body.mediaUrls];
+    }
+
     const post = await contentService.createPost(req.user.id, {
       content: req.body.content,
-      mediaUrls: req.body.mediaUrls,
+      mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
       visibility: req.body.visibility,
     });
 
@@ -124,9 +143,28 @@ export const updatePost = [
     }
 
     const { id } = req.params;
+
+    // Handle uploaded files
+    let mediaUrls: string[] | undefined = undefined;
+    
+    // Get media URLs from uploaded files
+    if (req.files && Array.isArray(req.files)) {
+      mediaUrls = req.files.map((file: Express.Multer.File) => {
+        return `/uploads/posts/${file.filename}`;
+      });
+    } else if (req.file) {
+      // Single file upload
+      mediaUrls = [`/uploads/posts/${req.file.filename}`];
+    }
+
+    // Merge with any URLs provided in body
+    if (req.body.mediaUrls && Array.isArray(req.body.mediaUrls)) {
+      mediaUrls = mediaUrls ? [...mediaUrls, ...req.body.mediaUrls] : req.body.mediaUrls;
+    }
+
     const post = await contentService.updatePost(id, req.user.id, {
       content: req.body.content,
-      mediaUrls: req.body.mediaUrls,
+      mediaUrls,
       visibility: req.body.visibility,
     });
 
