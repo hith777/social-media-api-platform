@@ -137,3 +137,25 @@ export const updatePost = [
     });
   }),
 ];
+
+/**
+ * @route   DELETE /api/posts/:id
+ * @desc    Delete a post (soft delete)
+ * @access  Private (post owner only)
+ */
+export const deletePost = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id } = req.params;
+    await contentService.deletePost(id, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Post deleted successfully',
+    });
+  }),
+];

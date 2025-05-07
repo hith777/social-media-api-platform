@@ -342,6 +342,34 @@ export class ContentService {
 
     return updatedPost;
   }
+
+  /**
+   * Delete a post (soft delete)
+   */
+  async deletePost(postId: string, userId: string): Promise<void> {
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false as any,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    if (post.authorId !== userId) {
+      throw new AppError('You can only delete your own posts', 403);
+    }
+
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        isDeleted: true as any,
+        deletedAt: new Date() as any,
+      },
+    });
+  }
 }
 
 export default new ContentService();

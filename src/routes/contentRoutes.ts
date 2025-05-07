@@ -5,6 +5,7 @@ import {
   getFeed,
   getUserPosts,
   updatePost,
+  deletePost,
 } from '../controllers/contentController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
 
@@ -18,5 +19,6 @@ router.get('/user/:userId', optionalAuthenticate, getUserPosts);
 router.post('/', authenticate, createPost);
 router.get('/feed', authenticate, getFeed);
 router.put('/:id', authenticate, updatePost);
+router.delete('/:id', authenticate, deletePost);
 
 export default router;
