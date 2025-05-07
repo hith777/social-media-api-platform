@@ -17,6 +17,13 @@ const createPostSchema = z.object({
   visibility: postVisibilitySchema.optional(),
 });
 
+// Update post schema
+const updatePostSchema = z.object({
+  content: postContentSchema.optional(),
+  mediaUrls: mediaUrlsSchema,
+  visibility: postVisibilitySchema.optional(),
+});
+
 /**
  * @route   POST /api/posts
  * @desc    Create a new post
@@ -99,6 +106,34 @@ export const getUserPosts = [
     res.json({
       success: true,
       data: posts,
+    });
+  }),
+];
+
+/**
+ * @route   PUT /api/posts/:id
+ * @desc    Update a post
+ * @access  Private (post owner only)
+ */
+export const updatePost = [
+  validateParams(idParamSchema),
+  validateBody(updatePostSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id } = req.params;
+    const post = await contentService.updatePost(id, req.user.id, {
+      content: req.body.content,
+      mediaUrls: req.body.mediaUrls,
+      visibility: req.body.visibility,
+    });
+
+    res.json({
+      success: true,
+      message: 'Post updated successfully',
+      data: post,
     });
   }),
 ];

@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { createPost, getPost, getFeed, getUserPosts } from '../controllers/contentController';
+import {
+  createPost,
+  getPost,
+  getFeed,
+  getUserPosts,
+  updatePost,
+} from '../controllers/contentController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
 
 const router = Router();
@@ -11,5 +17,6 @@ router.get('/user/:userId', optionalAuthenticate, getUserPosts);
 // Protected routes
 router.post('/', authenticate, createPost);
 router.get('/feed', authenticate, getFeed);
+router.put('/:id', authenticate, updatePost);
 
 export default router;

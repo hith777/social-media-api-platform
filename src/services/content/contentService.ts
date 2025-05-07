@@ -271,6 +271,77 @@ export class ContentService {
       isLiked: (post as any).likes && (post as any).likes.length > 0,
     }));
   }
+
+  /**
+   * Update a post
+   */
+  async updatePost(
+    postId: string,
+    userId: string,
+    data: {
+      content?: string;
+      mediaUrls?: string[];
+      visibility?: 'public' | 'private' | 'friends';
+    }
+  ): Promise<any> {
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false as any,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    if (post.authorId !== userId) {
+      throw new AppError('You can only update your own posts', 403);
+    }
+
+    // Validate content if provided
+    if (data.content !== undefined) {
+      if (data.content.trim().length === 0) {
+        throw new AppError('Post content cannot be empty', 400);
+      }
+      if (data.content.length > 5000) {
+        throw new AppError('Post content cannot exceed 5000 characters', 400);
+      }
+    }
+
+    // Validate media URLs count
+    if (data.mediaUrls && data.mediaUrls.length > 10) {
+      throw new AppError('Maximum 10 media files allowed per post', 400);
+    }
+
+    const updatedPost = await prisma.post.update({
+      where: { id: postId },
+      data: {
+        ...(data.content !== undefined && { content: data.content.trim() }),
+        ...(data.mediaUrls !== undefined && { mediaUrls: data.mediaUrls as any }),
+        ...(data.visibility !== undefined && { visibility: data.visibility as any }),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    return updatedPost;
+  }
 }
 
 export default new ContentService();
