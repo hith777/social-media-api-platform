@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import { validateBody, validateParams } from '../middleware/validator';
+import { validateBody, validateParams, validateQuery } from '../middleware/validator';
 import contentService from '../services/content/contentService';
 import { z } from 'zod';
 import {
@@ -8,6 +8,7 @@ import {
   postVisibilitySchema,
   mediaUrlsSchema,
   idParamSchema,
+  paginationSchema,
 } from '../utils/validation';
 
 // Create post schema
@@ -95,16 +96,24 @@ export const getPost = [
  * @access  Private
  */
 export const getFeed = [
+  validateQuery(paginationSchema),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
       throw new Error('User not authenticated');
     }
 
-    const posts = await contentService.getFeed(req.user.id);
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 10 } = queryParams;
+
+    const result = await contentService.getFeed(req.user.id, page, limit);
 
     res.json({
       success: true,
-      data: posts,
+      data: result,
     });
   }),
 ];
@@ -116,15 +125,23 @@ export const getFeed = [
  */
 export const getUserPosts = [
   validateParams(z.object({ userId: z.string().min(1, 'User ID is required') })),
+  validateQuery(paginationSchema),
   asyncHandler(async (req: Request, res: Response) => {
     const { userId } = req.params;
     const viewerId = req.user?.id;
 
-    const posts = await contentService.getUserPosts(userId, viewerId);
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 10 } = queryParams;
+
+    const result = await contentService.getUserPosts(userId, viewerId, page, limit);
 
     res.json({
       success: true,
-      data: posts,
+      data: result,
     });
   }),
 ];

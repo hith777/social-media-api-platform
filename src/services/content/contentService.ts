@@ -128,7 +128,18 @@ export class ContentService {
   /**
    * Get user's feed (posts from followed users and own posts)
    */
-  async getFeed(userId: string): Promise<any[]> {
+  async getFeed(
+    userId: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    posts: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
     // Get user's following list
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
@@ -161,46 +172,77 @@ export class ContentService {
     // Filter out blocked users
     const allowedAuthorIds = followingIds.filter((id) => !blockedIds.has(id));
 
-    const posts = await prisma.post.findMany({
-      where: {
-        authorId: { in: allowedAuthorIds },
-        isDeleted: false as any,
-        visibility: { in: ['public', 'friends'] as any },
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where: {
+          authorId: { in: allowedAuthorIds },
+          isDeleted: false as any,
+          visibility: { in: ['public', 'friends'] as any },
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+          likes: {
+            where: { userId },
+            select: { userId: true },
           },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({
+        where: {
+          authorId: { in: allowedAuthorIds },
+          isDeleted: false as any,
+          visibility: { in: ['public', 'friends'] as any },
         },
-        likes: {
-          where: { userId },
-          select: { userId: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+      }),
+    ]);
 
-    return posts.map((post) => ({
-      ...post,
-      isLiked: (post as any).likes && (post as any).likes.length > 0,
-    }));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      posts: posts.map((post) => ({
+        ...post,
+        isLiked: (post as any).likes && (post as any).likes.length > 0,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   /**
    * Get posts by a specific user
    */
-  async getUserPosts(authorId: string, viewerId?: string): Promise<any[]> {
+  async getUserPosts(
+    authorId: string,
+    viewerId?: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    posts: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
     // Check if viewer is blocked
     if (viewerId && viewerId !== authorId) {
       const isBlocked = await prisma.block.findFirst({
@@ -213,7 +255,13 @@ export class ContentService {
       });
 
       if (isBlocked) {
-        return [];
+        return {
+          posts: [],
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        };
       }
     }
 
@@ -234,42 +282,61 @@ export class ContentService {
       }
     }
 
-    const posts = await prisma.post.findMany({
-      where: {
-        authorId,
-        isDeleted: false as any,
-        visibility: { in: visibilityFilter },
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          },
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where: {
+          authorId,
+          isDeleted: false as any,
+          visibility: { in: visibilityFilter },
         },
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
           },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+          likes: viewerId
+            ? {
+                where: { userId: viewerId },
+                select: { userId: true },
+              }
+            : false,
         },
-        likes: viewerId
-          ? {
-              where: { userId: viewerId },
-              select: { userId: true },
-            }
-          : false,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({
+        where: {
+          authorId,
+          isDeleted: false as any,
+          visibility: { in: visibilityFilter },
+        },
+      }),
+    ]);
 
-    return posts.map((post) => ({
-      ...post,
-      isLiked: (post as any).likes && (post as any).likes.length > 0,
-    }));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      posts: posts.map((post) => ({
+        ...post,
+        isLiked: (post as any).likes && (post as any).likes.length > 0,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   /**
