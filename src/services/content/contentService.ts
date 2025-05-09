@@ -98,11 +98,6 @@ export class ContentService {
       throw new AppError('Post not found', 404);
     }
 
-    // Check visibility
-    if ((post as any).visibility === 'private' && post.authorId !== userId) {
-      throw new AppError('Post not found', 404);
-    }
-
     // Check if user is blocked
     if (userId && userId !== post.authorId) {
       const isBlocked = await prisma.block.findFirst({
@@ -118,6 +113,37 @@ export class ContentService {
         throw new AppError('Post not found', 404);
       }
     }
+
+    // Check visibility
+    const visibility = (post as any).visibility;
+    
+    if (visibility === 'private') {
+      // Private posts are only visible to the author
+      if (post.authorId !== userId) {
+        throw new AppError('Post not found', 404);
+      }
+    } else if (visibility === 'friends') {
+      // Friends posts are visible to the author and their followers
+      if (post.authorId !== userId) {
+        if (!userId) {
+          // Not authenticated, cannot see friends-only posts
+          throw new AppError('Post not found', 404);
+        }
+        
+        // Check if viewer follows the author
+        const follows = await prisma.follow.findFirst({
+          where: {
+            followerId: userId,
+            followingId: post.authorId,
+          },
+        });
+
+        if (!follows) {
+          throw new AppError('Post not found', 404);
+        }
+      }
+    }
+    // 'public' posts are visible to everyone (no additional check needed)
 
     return {
       ...post,
@@ -371,9 +397,38 @@ export class ContentService {
 
     if (filters.visibility) {
       where.visibility = filters.visibility;
-    } else if (!userId || userId !== filters.authorId) {
-      // Default to public if not viewing own posts
-      where.visibility = 'public';
+    } else if (filters.authorId) {
+      // When filtering by author, determine visibility based on relationship
+      if (userId === filters.authorId) {
+        // Viewing own posts - show all visibility levels
+        where.visibility = { in: ['public', 'private', 'friends'] as any };
+      } else if (userId) {
+        // Check if user follows the author
+        const follows = await prisma.follow.findFirst({
+          where: {
+            followerId: userId,
+            followingId: filters.authorId,
+          },
+        });
+        if (follows) {
+          // Show public and friends posts
+          where.visibility = { in: ['public', 'friends'] as any };
+        } else {
+          // Only show public posts
+          where.visibility = 'public';
+        }
+      } else {
+        // Not authenticated - only show public posts
+        where.visibility = 'public';
+      }
+    } else {
+      // No author filter - default to public for unauthenticated users
+      if (!userId) {
+        where.visibility = 'public';
+      } else {
+        // Authenticated users can see public and friends posts (from their feed)
+        where.visibility = { in: ['public', 'friends'] as any };
+      }
     }
 
     if (filters.search) {
