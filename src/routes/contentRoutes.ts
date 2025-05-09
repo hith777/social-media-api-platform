@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   createPost,
   getPost,
+  getPosts,
   getFeed,
   getUserPosts,
   updatePost,
@@ -15,9 +16,10 @@ import {
 
 const router = Router();
 
-// Public routes
-router.get('/:id', optionalAuthenticate, getPost);
+// Public routes (specific routes must come before parameterized routes)
+router.get('/', optionalAuthenticate, getPosts);
 router.get('/user/:userId', optionalAuthenticate, getUserPosts);
+router.get('/:id', optionalAuthenticate, getPost);
 
 // Protected routes
 router.post(

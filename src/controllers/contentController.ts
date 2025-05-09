@@ -25,6 +25,22 @@ const updatePostSchema = z.object({
   visibility: postVisibilitySchema.optional(),
 });
 
+// Post query schema for filtering and sorting
+const postQuerySchema = z.object({
+  page: z.string().optional().transform((val) => (val ? parseInt(val, 10) : 1)),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 10))
+    .refine((val) => val > 0 && val <= 50, {
+      message: 'Limit must be between 1 and 50',
+    }),
+  sortBy: z.enum(['newest', 'oldest', 'popular']).optional().default('newest'),
+  search: z.string().max(100).optional(),
+  visibility: postVisibilitySchema.optional(),
+  authorId: z.string().optional(),
+});
+
 /**
  * @route   POST /api/posts
  * @desc    Create a new post
@@ -66,6 +82,51 @@ export const createPost = [
       success: true,
       message: 'Post created successfully',
       data: post,
+    });
+  }),
+];
+
+/**
+ * @route   GET /api/posts
+ * @desc    Get posts with filtering and sorting
+ * @access  Public
+ */
+export const getPosts = [
+  validateQuery(postQuerySchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+      sortBy?: 'newest' | 'oldest' | 'popular';
+      search?: string;
+      visibility?: 'public' | 'private' | 'friends';
+      authorId?: string;
+    };
+
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'newest',
+      search,
+      visibility,
+      authorId,
+    } = queryParams;
+
+    const result = await contentService.getPosts(
+      {
+        authorId,
+        visibility,
+        search,
+      },
+      sortBy,
+      page,
+      limit,
+      req.user?.id
+    );
+
+    res.json({
+      success: true,
+      data: result,
     });
   }),
 ];

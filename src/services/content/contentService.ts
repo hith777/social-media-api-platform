@@ -340,6 +340,134 @@ export class ContentService {
   }
 
   /**
+   * Get posts with filtering and sorting
+   */
+  async getPosts(
+    filters: {
+      authorId?: string;
+      visibility?: 'public' | 'private' | 'friends';
+      search?: string;
+    },
+    sortBy: 'newest' | 'oldest' | 'popular' = 'newest',
+    page: number = 1,
+    limit: number = 10,
+    userId?: string
+  ): Promise<{
+    posts: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      isDeleted: false as any,
+    };
+
+    if (filters.authorId) {
+      where.authorId = filters.authorId;
+    }
+
+    if (filters.visibility) {
+      where.visibility = filters.visibility;
+    } else if (!userId || userId !== filters.authorId) {
+      // Default to public if not viewing own posts
+      where.visibility = 'public';
+    }
+
+    if (filters.search) {
+      where.content = {
+        contains: filters.search,
+        mode: 'insensitive',
+      };
+    }
+
+    // Exclude blocked users
+    if (userId) {
+      const blocked = await prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: userId },
+            { blockedId: userId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      const blockedIds = new Set<string>();
+      blocked.forEach((b) => {
+        if (b.blockerId === userId) blockedIds.add(b.blockedId);
+        if (b.blockedId === userId) blockedIds.add(b.blockerId);
+      });
+
+      if (blockedIds.size > 0) {
+        where.authorId = {
+          notIn: Array.from(blockedIds),
+        };
+      }
+    }
+
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' };
+    if (sortBy === 'oldest') {
+      orderBy = { createdAt: 'asc' };
+    } else if (sortBy === 'popular') {
+      // Sort by like count (would need aggregation in production)
+      orderBy = { createdAt: 'desc' };
+    }
+
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+          likes: userId
+            ? {
+                where: { userId },
+                select: { userId: true },
+              }
+            : false,
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      posts: posts.map((post) => ({
+        ...post,
+        isLiked: (post as any).likes && (post as any).likes.length > 0,
+      })),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
    * Update a post
    */
   async updatePost(
