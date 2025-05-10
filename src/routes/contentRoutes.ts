@@ -20,9 +20,8 @@ const router = Router();
 // Public routes (specific routes must come before parameterized routes)
 router.get('/', optionalAuthenticate, getPosts);
 router.get('/user/:userId', optionalAuthenticate, getUserPosts);
-router.get('/:id', optionalAuthenticate, getPost);
 
-// Protected routes
+// Protected routes (specific routes must come before parameterized routes)
 router.post(
   '/',
   authenticate,
@@ -31,6 +30,9 @@ router.post(
   createPost
 );
 router.get('/feed', authenticate, getFeed);
+
+// Parameterized routes (must come last)
+router.get('/:id', optionalAuthenticate, getPost);
 router.put(
   '/:id',
   authenticate,
