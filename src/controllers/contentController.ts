@@ -9,6 +9,7 @@ import {
   mediaUrlsSchema,
   idParamSchema,
   paginationSchema,
+  reportReasonSchema,
 } from '../utils/validation';
 
 // Create post schema
@@ -39,6 +40,12 @@ const postQuerySchema = z.object({
   search: z.string().max(100).optional(),
   visibility: postVisibilitySchema.optional(),
   authorId: z.string().optional(),
+});
+
+// Report post schema
+const reportPostSchema = z.object({
+  reason: reportReasonSchema,
+  description: z.string().max(1000, 'Description cannot exceed 1000 characters').optional(),
 });
 
 /**
@@ -272,6 +279,32 @@ export const deletePost = [
     res.json({
       success: true,
       message: 'Post deleted successfully',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/posts/:id/report
+ * @desc    Report a post
+ * @access  Private
+ */
+export const reportPost = [
+  validateParams(idParamSchema),
+  validateBody(reportPostSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id } = req.params;
+    await contentService.reportPost(id, req.user.id, {
+      reason: req.body.reason,
+      description: req.body.description,
+    });
+
+    res.json({
+      success: true,
+      message: 'Post reported successfully',
     });
   }),
 ];

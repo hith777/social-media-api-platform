@@ -7,6 +7,7 @@ import {
   getUserPosts,
   updatePost,
   deletePost,
+  reportPost,
 } from '../controllers/contentController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
 import {
@@ -38,5 +39,6 @@ router.put(
   updatePost
 );
 router.delete('/:id', authenticate, deletePost);
+router.post('/:id/report', authenticate, reportPost);
 
 export default router;

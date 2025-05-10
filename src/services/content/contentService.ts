@@ -620,6 +620,53 @@ export class ContentService {
       },
     });
   }
+
+  /**
+   * Report a post
+   */
+  async reportPost(
+    postId: string,
+    reporterId: string,
+    data: {
+      reason: string;
+      description?: string;
+    }
+  ): Promise<any> {
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false as any,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    // Check if user already reported this post
+    const existingReport = await (prisma as any).report.findFirst({
+      where: {
+        postId,
+        reporterId,
+        status: { in: ['pending', 'reviewed'] },
+      },
+    });
+
+    if (existingReport) {
+      throw new AppError('You have already reported this post', 409);
+    }
+
+    const report = await (prisma as any).report.create({
+      data: {
+        postId,
+        reporterId,
+        reason: data.reason,
+        description: data.description,
+      },
+    });
+
+    return report;
+  }
 }
 
 export default new ContentService();

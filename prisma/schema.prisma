@@ -69,6 +69,7 @@ model Post {
   deletedAt   DateTime?
   comments    Comment[] @relation("PostComments")
   likes       Like[]    @relation("PostLikes")
+  reports     Report[]  @relation("PostReports")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -128,6 +129,26 @@ model Follow {
   createdAt   DateTime @default(now())
 
   @@map("follows")
+}
+
+// Report model - for reporting posts/comments
+model Report {
+  id          String   @id @default(cuid())
+  postId      String?
+  post        Post?    @relation("PostReports", fields: [postId], references: [id])
+  commentId   String?
+  reporterId  String
+  reason      String
+  description String?
+  status      String   @default("pending") // pending, reviewed, resolved, dismissed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([postId])
+  @@index([commentId])
+  @@index([reporterId])
+  @@index([status])
+  @@map("reports")
 }
 
 // Notification model - foundation for real-time notifications
