@@ -758,6 +758,169 @@ export class ContentService {
 
     return comment;
   }
+
+  /**
+   * Get comments for a post with nested replies
+   */
+  async getPostComments(
+    postId: string,
+    userId?: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    comments: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    // Verify post exists
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    const skip = (page - 1) * limit;
+
+    // Get top-level comments (parentId is null)
+    const [topLevelComments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: {
+          postId,
+          parentId: null,
+          isDeleted: false,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              replies: true,
+            },
+          },
+          likes: userId
+            ? {
+                where: { userId },
+                select: { userId: true },
+              }
+            : false,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.comment.count({
+        where: {
+          postId,
+          parentId: null,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    // For each top-level comment, fetch its replies (nested)
+    const commentsWithReplies = await Promise.all(
+      topLevelComments.map(async (comment) => {
+        const replies = await this.getCommentReplies(comment.id, userId);
+        return {
+          ...comment,
+          isLiked: (comment as any).likes && (comment as any).likes.length > 0,
+          replies,
+        };
+      })
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      comments: commentsWithReplies,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Recursively get replies for a comment
+   */
+  private async getCommentReplies(
+    parentId: string,
+    userId?: string,
+    maxDepth: number = 3
+  ): Promise<any[]> {
+    if (maxDepth <= 0) {
+      return [];
+    }
+
+    const replies = await prisma.comment.findMany({
+      where: {
+        parentId,
+        isDeleted: false,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
+        },
+        likes: userId
+          ? {
+              where: { userId },
+              select: { userId: true },
+            }
+          : false,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      take: 10, // Limit direct replies per comment
+    });
+
+    // Recursively get nested replies
+    const repliesWithNested = await Promise.all(
+      replies.map(async (reply) => {
+        const nestedReplies = await this.getCommentReplies(
+          reply.id,
+          userId,
+          maxDepth - 1
+        );
+        return {
+          ...reply,
+          isLiked: (reply as any).likes && (reply as any).likes.length > 0,
+          replies: nestedReplies,
+        };
+      })
+    );
+
+    return repliesWithNested;
+  }
 }
 
 export default new ContentService();

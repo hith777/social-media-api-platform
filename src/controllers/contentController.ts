@@ -342,3 +342,31 @@ export const createComment = [
     });
   }),
 ];
+
+/**
+ * @route   GET /api/posts/:id/comments
+ * @desc    Get comments for a post with nested replies
+ * @access  Public (optional auth)
+ */
+export const getPostComments = [
+  validateParams(idParamSchema),
+  validateQuery(paginationSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id: postId } = req.params;
+    const userId = req.user?.id;
+
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 20 } = queryParams;
+
+    const result = await contentService.getPostComments(postId, userId, page, limit);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+];
