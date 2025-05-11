@@ -58,4 +58,10 @@ export const reportReasonSchema = z
   .min(1, 'Report reason is required')
   .max(200, 'Report reason cannot exceed 200 characters');
 
+// Comment content validation
+export const commentContentSchema = z
+  .string()
+  .min(1, 'Comment content cannot be empty')
+  .max(2000, 'Comment content cannot exceed 2000 characters');
+
 
