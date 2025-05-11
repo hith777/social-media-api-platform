@@ -667,6 +667,97 @@ export class ContentService {
 
     return report;
   }
+
+  /**
+   * Create a new comment on a post
+   */
+  async createComment(
+    authorId: string,
+    postId: string,
+    data: {
+      content: string;
+      parentId?: string;
+    }
+  ): Promise<any> {
+    // Validate content
+    if (!data.content || data.content.trim().length === 0) {
+      throw new AppError('Comment content cannot be empty', 400);
+    }
+
+    if (data.content.length > 2000) {
+      throw new AppError('Comment content cannot exceed 2000 characters', 400);
+    }
+
+    // Verify post exists and is not deleted
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    // If parentId is provided, verify parent comment exists
+    if (data.parentId) {
+      const parentComment = await prisma.comment.findFirst({
+        where: {
+          id: data.parentId,
+          postId: postId,
+          isDeleted: false,
+        },
+      });
+
+      if (!parentComment) {
+        throw new AppError('Parent comment not found', 404);
+      }
+    }
+
+    // Check if user is blocked by post author or vice versa
+    const isBlocked = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: post.authorId, blockedId: authorId },
+          { blockerId: authorId, blockedId: post.authorId },
+        ],
+      },
+    });
+
+    if (isBlocked) {
+      throw new AppError('Cannot comment on this post', 403);
+    }
+
+    // Create comment
+    const comment = await prisma.comment.create({
+      data: {
+        content: data.content.trim(),
+        postId,
+        authorId,
+        parentId: data.parentId || null,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
+        },
+      },
+    });
+
+    return comment;
+  }
 }
 
 export default new ContentService();

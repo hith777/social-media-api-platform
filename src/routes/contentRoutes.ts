@@ -8,6 +8,7 @@ import {
   updatePost,
   deletePost,
   reportPost,
+  createComment,
 } from '../controllers/contentController';
 import { authenticate, optionalAuthenticate } from '../middleware/auth';
 import {
@@ -30,6 +31,9 @@ router.post(
   createPost
 );
 router.get('/feed', authenticate, getFeed);
+
+// Comment routes (must come before parameterized routes)
+router.post('/:id/comments', authenticate, createComment);
 
 // Parameterized routes (must come last)
 router.get('/:id', optionalAuthenticate, getPost);

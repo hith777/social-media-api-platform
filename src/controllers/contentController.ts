@@ -10,6 +10,7 @@ import {
   idParamSchema,
   paginationSchema,
   reportReasonSchema,
+  commentContentSchema,
 } from '../utils/validation';
 
 // Create post schema
@@ -305,6 +306,39 @@ export const reportPost = [
     res.json({
       success: true,
       message: 'Post reported successfully',
+    });
+  }),
+];
+
+// Create comment schema
+const createCommentSchema = z.object({
+  content: commentContentSchema,
+  parentId: z.string().min(1, 'Parent ID must be a valid string').optional(),
+});
+
+/**
+ * @route   POST /api/posts/:id/comments
+ * @desc    Create a comment on a post
+ * @access  Private
+ */
+export const createComment = [
+  validateParams(idParamSchema),
+  validateBody(createCommentSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    const comment = await contentService.createComment(req.user.id, postId, {
+      content: req.body.content,
+      parentId: req.body.parentId,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Comment created successfully',
+      data: comment,
     });
   }),
 ];
