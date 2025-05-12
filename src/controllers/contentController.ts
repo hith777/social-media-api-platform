@@ -401,3 +401,25 @@ export const updateComment = [
     });
   }),
 ];
+
+/**
+ * @route   DELETE /api/comments/:id
+ * @desc    Delete a comment
+ * @access  Private
+ */
+export const deleteComment = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: commentId } = req.params;
+    await contentService.deleteComment(commentId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Comment deleted successfully',
+    });
+  }),
+];

@@ -992,6 +992,37 @@ export class ContentService {
 
     return updatedComment;
   }
+
+  /**
+   * Delete a comment (soft delete)
+   */
+  async deleteComment(commentId: string, userId: string): Promise<void> {
+    // Find the comment
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Verify ownership
+    if (comment.authorId !== userId) {
+      throw new AppError('You can only delete your own comments', 403);
+    }
+
+    // Soft delete the comment
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+  }
 }
 
 export default new ContentService();
