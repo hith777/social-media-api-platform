@@ -927,6 +927,71 @@ export class ContentService {
 
     return repliesWithNested;
   }
+
+  /**
+   * Update a comment
+   */
+  async updateComment(
+    commentId: string,
+    userId: string,
+    data: {
+      content: string;
+    }
+  ): Promise<any> {
+    // Find the comment
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Verify ownership
+    if (comment.authorId !== userId) {
+      throw new AppError('You can only update your own comments', 403);
+    }
+
+    // Validate content (check trimmed length to match what will be stored)
+    const trimmedContent = data.content.trim();
+    if (trimmedContent.length === 0) {
+      throw new AppError('Comment content cannot be empty', 400);
+    }
+
+    if (trimmedContent.length > 2000) {
+      throw new AppError('Comment content cannot exceed 2000 characters', 400);
+    }
+
+    // Update comment
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        content: trimmedContent,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            replies: true,
+          },
+        },
+      },
+    });
+
+    return updatedComment;
+  }
 }
 
 export default new ContentService();

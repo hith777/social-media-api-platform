@@ -10,6 +10,7 @@ import healthRouter from './routes/health';
 import docsRouter from './routes/docs';
 import userRoutes from './routes/userRoutes';
 import contentRoutes from './routes/contentRoutes';
+import commentRoutes from './routes/commentRoutes';
 import socialRoutes from './routes/socialRoutes';
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api-docs', docsRouter);
 // API routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', contentRoutes);
+app.use('/api/comments', commentRoutes);
 app.use('/api/social', socialRoutes);
 
 // Error handling middleware (must be last)

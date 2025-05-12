@@ -370,3 +370,34 @@ export const getPostComments = [
     });
   }),
 ];
+
+// Update comment schema
+const updateCommentSchema = z.object({
+  content: commentContentSchema,
+});
+
+/**
+ * @route   PUT /api/comments/:id
+ * @desc    Update a comment
+ * @access  Private
+ */
+export const updateComment = [
+  validateParams(idParamSchema),
+  validateBody(updateCommentSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: commentId } = req.params;
+    const updatedComment = await contentService.updateComment(commentId, req.user.id, {
+      content: req.body.content,
+    });
+
+    res.json({
+      success: true,
+      message: 'Comment updated successfully',
+      data: updatedComment,
+    });
+  }),
+];
