@@ -263,9 +263,9 @@ export class UserService {
     const user = await prisma.user.update({
       where: { id: userId },
       data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        bio: data.bio,
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.bio !== undefined && { bio: data.bio }),
       },
       select: {
         id: true,

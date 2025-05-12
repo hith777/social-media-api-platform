@@ -13,12 +13,13 @@ export class ContentService {
       visibility?: 'public' | 'private' | 'friends';
     }
   ): Promise<any> {
-    // Validate content length
-    if (!data.content || data.content.trim().length === 0) {
+    // Validate content length (check trimmed length to match what will be stored)
+    const trimmedContent = data.content.trim();
+    if (trimmedContent.length === 0) {
       throw new AppError('Post content cannot be empty', 400);
     }
 
-    if (data.content.length > 5000) {
+    if (trimmedContent.length > 5000) {
       throw new AppError('Post content cannot exceed 5000 characters', 400);
     }
 
@@ -29,7 +30,7 @@ export class ContentService {
 
     const post = await prisma.post.create({
       data: {
-        content: data.content.trim(),
+        content: trimmedContent,
         authorId,
         mediaUrls: (data.mediaUrls || []) as any,
         visibility: (data.visibility || 'public') as any,
@@ -549,12 +550,14 @@ export class ContentService {
       throw new AppError('You can only update your own posts', 403);
     }
 
-    // Validate content if provided
+    // Validate content if provided (check trimmed length to match what will be stored)
+    let trimmedContent: string | undefined;
     if (data.content !== undefined) {
-      if (data.content.trim().length === 0) {
+      trimmedContent = data.content.trim();
+      if (trimmedContent.length === 0) {
         throw new AppError('Post content cannot be empty', 400);
       }
-      if (data.content.length > 5000) {
+      if (trimmedContent.length > 5000) {
         throw new AppError('Post content cannot exceed 5000 characters', 400);
       }
     }
@@ -567,7 +570,9 @@ export class ContentService {
     const updatedPost = await prisma.post.update({
       where: { id: postId },
       data: {
-        ...(data.content !== undefined && { content: data.content.trim() }),
+        ...(trimmedContent !== undefined && {
+          content: trimmedContent,
+        }),
         ...(data.mediaUrls !== undefined && { mediaUrls: data.mediaUrls as any }),
         ...(data.visibility !== undefined && { visibility: data.visibility as any }),
       },
@@ -679,12 +684,13 @@ export class ContentService {
       parentId?: string;
     }
   ): Promise<any> {
-    // Validate content
-    if (!data.content || data.content.trim().length === 0) {
+    // Validate content (check trimmed length to match what will be stored)
+    const trimmedContent = data.content.trim();
+    if (trimmedContent.length === 0) {
       throw new AppError('Comment content cannot be empty', 400);
     }
 
-    if (data.content.length > 2000) {
+    if (trimmedContent.length > 2000) {
       throw new AppError('Comment content cannot exceed 2000 characters', 400);
     }
 
@@ -732,7 +738,7 @@ export class ContentService {
     // Create comment
     const comment = await prisma.comment.create({
       data: {
-        content: data.content.trim(),
+        content: trimmedContent,
         postId,
         authorId,
         parentId: data.parentId || null,
