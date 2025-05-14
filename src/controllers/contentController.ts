@@ -358,11 +358,18 @@ export const getPostComments = [
     const queryParams = req.query as unknown as {
       page?: number;
       limit?: number;
+      repliesLimit?: number;
     };
 
-    const { page = 1, limit = 20 } = queryParams;
+    const { page = 1, limit = 20, repliesLimit = 10 } = queryParams;
 
-    const result = await contentService.getPostComments(postId, userId, page, limit);
+    const result = await contentService.getPostComments(
+      postId,
+      userId,
+      page,
+      limit,
+      repliesLimit
+    );
 
     res.json({
       success: true,
@@ -420,6 +427,39 @@ export const deleteComment = [
     res.json({
       success: true,
       message: 'Comment deleted successfully',
+    });
+  }),
+];
+
+/**
+ * @route   GET /api/comments/:id/replies
+ * @desc    Get paginated replies for a comment
+ * @access  Public (optional auth)
+ */
+export const getCommentReplies = [
+  validateParams(idParamSchema),
+  validateQuery(paginationSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id: commentId } = req.params;
+    const userId = req.user?.id;
+
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 10 } = queryParams;
+
+    const result = await contentService.getCommentRepliesPaginated(
+      commentId,
+      userId,
+      page,
+      limit
+    );
+
+    res.json({
+      success: true,
+      data: result,
     });
   }),
 ];

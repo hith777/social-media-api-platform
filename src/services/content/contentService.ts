@@ -772,7 +772,8 @@ export class ContentService {
     postId: string,
     userId?: string,
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    repliesLimit: number = 10
   ): Promise<{
     comments: any[];
     total: number;
@@ -840,14 +841,21 @@ export class ContentService {
       }),
     ]);
 
-    // For each top-level comment, fetch its replies (nested)
+    // For each top-level comment, fetch its replies (nested) with pagination
     const commentsWithReplies = await Promise.all(
       topLevelComments.map(async (comment) => {
-        const replies = await this.getCommentReplies(comment.id, userId);
+        const repliesResult = await this.getCommentReplies(
+          comment.id,
+          userId,
+          3,
+          repliesLimit
+        );
         return {
           ...comment,
           isLiked: (comment as any).likes && (comment as any).likes.length > 0,
-          replies,
+          replies: repliesResult.replies,
+          repliesCount: repliesResult.total,
+          hasMoreReplies: repliesResult.total > repliesLimit,
         };
       })
     );
@@ -864,17 +872,30 @@ export class ContentService {
   }
 
   /**
-   * Recursively get replies for a comment
+   * Recursively get replies for a comment with pagination
    */
   private async getCommentReplies(
     parentId: string,
     userId?: string,
-    maxDepth: number = 3
-  ): Promise<any[]> {
+    maxDepth: number = 3,
+    limit: number = 10
+  ): Promise<{
+    replies: any[];
+    total: number;
+  }> {
     if (maxDepth <= 0) {
-      return [];
+      return { replies: [], total: 0 };
     }
 
+    // Get total count of direct replies
+    const total = await prisma.comment.count({
+      where: {
+        parentId,
+        isDeleted: false,
+      },
+    });
+
+    // Get paginated direct replies
     const replies = await prisma.comment.findMany({
       where: {
         parentId,
@@ -906,26 +927,119 @@ export class ContentService {
       orderBy: {
         createdAt: 'asc',
       },
-      take: 10, // Limit direct replies per comment
+      take: limit,
     });
 
-    // Recursively get nested replies
+    // Recursively get nested replies (no pagination for nested levels)
     const repliesWithNested = await Promise.all(
       replies.map(async (reply) => {
         const nestedReplies = await this.getCommentReplies(
           reply.id,
           userId,
-          maxDepth - 1
+          maxDepth - 1,
+          limit
         );
         return {
           ...reply,
           isLiked: (reply as any).likes && (reply as any).likes.length > 0,
-          replies: nestedReplies,
+          replies: nestedReplies.replies,
+          repliesCount: nestedReplies.total,
         };
       })
     );
 
-    return repliesWithNested;
+    return {
+      replies: repliesWithNested,
+      total,
+    };
+  }
+
+  /**
+   * Get paginated replies for a specific comment
+   */
+  async getCommentRepliesPaginated(
+    commentId: string,
+    userId?: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{
+    replies: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    // Verify comment exists
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [replies, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: {
+          parentId: commentId,
+          isDeleted: false,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              replies: true,
+            },
+          },
+          likes: userId
+            ? {
+                where: { userId },
+                select: { userId: true },
+              }
+            : false,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.comment.count({
+        where: {
+          parentId: commentId,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const repliesWithLikes = replies.map((reply) => ({
+      ...reply,
+      isLiked: (reply as any).likes && (reply as any).likes.length > 0,
+    }));
+
+    return {
+      replies: repliesWithLikes,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   /**
