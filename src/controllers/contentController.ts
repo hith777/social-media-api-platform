@@ -463,3 +463,70 @@ export const getCommentReplies = [
     });
   }),
 ];
+
+/**
+ * @route   POST /api/comments/:id/like
+ * @desc    Like a comment
+ * @access  Private
+ */
+export const likeComment = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: commentId } = req.params;
+    await contentService.likeComment(commentId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Comment liked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   DELETE /api/comments/:id/like
+ * @desc    Unlike a comment
+ * @access  Private
+ */
+export const unlikeComment = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: commentId } = req.params;
+    await contentService.unlikeComment(commentId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Comment unliked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/comments/:id/toggle-like
+ * @desc    Toggle comment like (like if not liked, unlike if liked)
+ * @access  Private
+ */
+export const toggleCommentLike = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: commentId } = req.params;
+    const result = await contentService.toggleCommentLike(commentId, req.user.id);
+
+    res.json({
+      success: true,
+      message: result.liked ? 'Comment liked successfully' : 'Comment unliked successfully',
+      data: result,
+    });
+  }),
+];

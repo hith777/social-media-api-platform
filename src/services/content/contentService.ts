@@ -1137,6 +1137,129 @@ export class ContentService {
       },
     });
   }
+
+  /**
+   * Like a comment
+   */
+  async likeComment(commentId: string, userId: string): Promise<void> {
+    // Verify comment exists
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_commentId: {
+          userId,
+          commentId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      throw new AppError('Comment already liked', 400);
+    }
+
+    // Create like
+    await prisma.like.create({
+      data: {
+        userId,
+        commentId,
+      },
+    });
+  }
+
+  /**
+   * Unlike a comment
+   */
+  async unlikeComment(commentId: string, userId: string): Promise<void> {
+    // Verify comment exists
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Check if liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_commentId: {
+          userId,
+          commentId,
+        },
+      },
+    });
+
+    if (!existingLike) {
+      throw new AppError('Comment not liked', 400);
+    }
+
+    // Delete like
+    await prisma.like.delete({
+      where: {
+        id: existingLike.id,
+      },
+    });
+  }
+
+  /**
+   * Toggle comment like (like if not liked, unlike if liked)
+   */
+  async toggleCommentLike(commentId: string, userId: string): Promise<{ liked: boolean }> {
+    // Verify comment exists
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        isDeleted: false,
+      },
+    });
+
+    if (!comment) {
+      throw new AppError('Comment not found', 404);
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_commentId: {
+          userId,
+          commentId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      // Unlike
+      await prisma.like.delete({
+        where: {
+          id: existingLike.id,
+        },
+      });
+      return { liked: false };
+    } else {
+      // Like
+      await prisma.like.create({
+        data: {
+          userId,
+          commentId,
+        },
+      });
+      return { liked: true };
+    }
+  }
 }
 
 export default new ContentService();
