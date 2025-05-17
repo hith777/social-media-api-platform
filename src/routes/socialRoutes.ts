@@ -1,9 +1,12 @@
 import { Router } from 'express';
-// Social routes - to be implemented in Phase 5
+import { followUser, unfollowUser } from '../controllers/socialController';
+import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
-// Placeholder routes will be added in Phase 5
+// Follow routes
+router.post('/follow/:id', authenticate, followUser);
+router.delete('/follow/:id', authenticate, unfollowUser);
 
 export default router;
 
