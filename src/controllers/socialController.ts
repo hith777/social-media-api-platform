@@ -48,3 +48,57 @@ export const unfollowUser = [
   }),
 ];
 
+/**
+ * @route   GET /api/social/followers/:id
+ * @desc    Get followers of a user
+ * @access  Public (optional auth)
+ */
+export const getFollowers = [
+  validateParams(idParamSchema),
+  validateQuery(paginationSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id: userId } = req.params;
+
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 20 } = queryParams;
+
+    const result = await socialService.getFollowers(userId, page, limit);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+];
+
+/**
+ * @route   GET /api/social/following/:id
+ * @desc    Get users that a user is following
+ * @access  Public (optional auth)
+ */
+export const getFollowing = [
+  validateParams(idParamSchema),
+  validateQuery(paginationSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { id: userId } = req.params;
+
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+    };
+
+    const { page = 1, limit = 20 } = queryParams;
+
+    const result = await socialService.getFollowing(userId, page, limit);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+];
+

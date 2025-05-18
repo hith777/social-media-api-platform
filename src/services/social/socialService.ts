@@ -101,6 +101,154 @@ export class SocialService {
 
     return !!follow;
   }
+
+  /**
+   * Get followers of a user
+   */
+  async getFollowers(
+    userId: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    followers: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    // Verify user exists
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [followers, total] = await Promise.all([
+      prisma.follow.findMany({
+        where: {
+          followingId: userId,
+        },
+        include: {
+          follower: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              bio: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.follow.count({
+        where: {
+          followingId: userId,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const followersList = followers.map((follow) => ({
+      ...follow.follower,
+      followedAt: follow.createdAt,
+    }));
+
+    return {
+      followers: followersList,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Get users that a user is following
+   */
+  async getFollowing(
+    userId: string,
+    page: number = 1,
+    limit: number = 20
+  ): Promise<{
+    following: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    // Verify user exists
+    const user = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [following, total] = await Promise.all([
+      prisma.follow.findMany({
+        where: {
+          followerId: userId,
+        },
+        include: {
+          following: {
+            select: {
+              id: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              bio: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.follow.count({
+        where: {
+          followerId: userId,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const followingList = following.map((follow) => ({
+      ...follow.following,
+      followedAt: follow.createdAt,
+    }));
+
+    return {
+      following: followingList,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
 }
 
 export default new SocialService();
