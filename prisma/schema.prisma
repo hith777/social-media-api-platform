@@ -34,6 +34,7 @@ model User {
   comments          Comment[] @relation("CommentAuthor")
   followers         Follow[]  @relation("Follower")
   following         Follow[]  @relation("Following")
+  likes             Like[]
   notifications     Notification[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -113,6 +114,7 @@ model Comment {
 model Like {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id])
   postId    String?
   post      Post?    @relation("PostLikes", fields: [postId], references: [id])
   commentId String?
@@ -124,6 +126,7 @@ model Like {
   @@index([userId])
   @@index([postId])
   @@index([commentId])
+  @@index([createdAt])
   @@map("likes")
 }
 
