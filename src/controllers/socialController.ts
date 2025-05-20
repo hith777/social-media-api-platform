@@ -102,3 +102,70 @@ export const getFollowing = [
   }),
 ];
 
+/**
+ * @route   POST /api/social/posts/:id/like
+ * @desc    Like a post
+ * @access  Private
+ */
+export const likePost = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    await socialService.likePost(postId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Post liked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   DELETE /api/social/posts/:id/like
+ * @desc    Unlike a post
+ * @access  Private
+ */
+export const unlikePost = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    await socialService.unlikePost(postId, req.user.id);
+
+    res.json({
+      success: true,
+      message: 'Post unliked successfully',
+    });
+  }),
+];
+
+/**
+ * @route   POST /api/social/posts/:id/toggle-like
+ * @desc    Toggle post like (like if not liked, unlike if liked)
+ * @access  Private
+ */
+export const togglePostLike = [
+  validateParams(idParamSchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new Error('User not authenticated');
+    }
+
+    const { id: postId } = req.params;
+    const result = await socialService.togglePostLike(postId, req.user.id);
+
+    res.json({
+      success: true,
+      message: result.liked ? 'Post liked successfully' : 'Post unliked successfully',
+      data: result,
+    });
+  }),
+];
+

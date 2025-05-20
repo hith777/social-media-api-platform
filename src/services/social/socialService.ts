@@ -249,6 +249,129 @@ export class SocialService {
       totalPages,
     };
   }
+
+  /**
+   * Like a post
+   */
+  async likePost(postId: string, userId: string): Promise<void> {
+    // Verify post exists and is not deleted
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      throw new AppError('Post already liked', 400);
+    }
+
+    // Create like
+    await prisma.like.create({
+      data: {
+        userId,
+        postId,
+      },
+    });
+  }
+
+  /**
+   * Unlike a post
+   */
+  async unlikePost(postId: string, userId: string): Promise<void> {
+    // Verify post exists
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    // Check if liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (!existingLike) {
+      throw new AppError('Post not liked', 400);
+    }
+
+    // Delete like
+    await prisma.like.delete({
+      where: {
+        id: existingLike.id,
+      },
+    });
+  }
+
+  /**
+   * Toggle post like (like if not liked, unlike if liked)
+   */
+  async togglePostLike(postId: string, userId: string): Promise<{ liked: boolean }> {
+    // Verify post exists and is not deleted
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        isDeleted: false,
+      },
+    });
+
+    if (!post) {
+      throw new AppError('Post not found', 404);
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (existingLike) {
+      // Unlike
+      await prisma.like.delete({
+        where: {
+          id: existingLike.id,
+        },
+      });
+      return { liked: false };
+    } else {
+      // Like
+      await prisma.like.create({
+        data: {
+          userId,
+          postId,
+        },
+      });
+      return { liked: true };
+    }
+  }
 }
 
 export default new SocialService();
