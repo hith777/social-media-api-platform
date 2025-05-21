@@ -4,7 +4,6 @@ import { validateParams, validateQuery } from '../middleware/validator';
 import notificationService from '../services/notification/notificationService';
 import { idParamSchema, paginationSchema } from '../utils/validation';
 import { authenticate } from '../middleware/auth';
-import { z } from 'zod';
 
 /**
  * @route   GET /api/notifications

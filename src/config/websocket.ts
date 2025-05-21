@@ -1,6 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { verifyToken } from '../utils/jwt';
+import { verifyAccessToken } from '../utils/jwt';
 import prisma from './database';
 import logger from './logger';
 
@@ -29,7 +29,7 @@ export function initializeWebSocket(httpServer: HttpServer): SocketIOServer {
         return next(new Error('Authentication error: No token provided'));
       }
 
-      const decoded = verifyToken(token);
+      const decoded = verifyAccessToken(token);
       if (!decoded || typeof decoded !== 'object' || !decoded.userId) {
         return next(new Error('Authentication error: Invalid token'));
       }

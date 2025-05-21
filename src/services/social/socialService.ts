@@ -24,12 +24,10 @@ export class SocialService {
     }
 
     // Check if already following
-    const existingFollow = await prisma.follow.findUnique({
+    const existingFollow = await prisma.follow.findFirst({
       where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
+        followerId,
+        followingId,
       },
     });
 
@@ -65,12 +63,10 @@ export class SocialService {
    */
   async unfollowUser(followerId: string, followingId: string): Promise<void> {
     // Find the follow relationship
-    const follow = await prisma.follow.findUnique({
+    const follow = await prisma.follow.findFirst({
       where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
+        followerId,
+        followingId,
       },
     });
 
@@ -90,12 +86,10 @@ export class SocialService {
    * Check if a user is following another user
    */
   async isFollowing(followerId: string, followingId: string): Promise<boolean> {
-    const follow = await prisma.follow.findUnique({
+    const follow = await prisma.follow.findFirst({
       where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
+        followerId,
+        followingId,
       },
     });
 
@@ -152,7 +146,7 @@ export class SocialService {
         },
         skip,
         take: limit,
-      }),
+      }) as any,
       prisma.follow.count({
         where: {
           followingId: userId,
@@ -162,7 +156,7 @@ export class SocialService {
 
     const totalPages = Math.ceil(total / limit);
 
-    const followersList = followers.map((follow) => ({
+    const followersList = followers.map((follow: any) => ({
       ...follow.follower,
       followedAt: follow.createdAt,
     }));
@@ -226,7 +220,7 @@ export class SocialService {
         },
         skip,
         take: limit,
-      }),
+      }) as any,
       prisma.follow.count({
         where: {
           followerId: userId,
@@ -236,7 +230,7 @@ export class SocialService {
 
     const totalPages = Math.ceil(total / limit);
 
-    const followingList = following.map((follow) => ({
+    const followingList = following.map((follow: any) => ({
       ...follow.following,
       followedAt: follow.createdAt,
     }));
