@@ -592,10 +592,17 @@ export class ContentService {
             comments: true,
           },
         },
+        likes: {
+          where: { userId },
+          select: { userId: true },
+        },
       },
     });
 
-    return updatedPost;
+    return {
+      ...updatedPost,
+      isLiked: (updatedPost as any).likes && (updatedPost as any).likes.length > 0,
+    };
   }
 
   /**
