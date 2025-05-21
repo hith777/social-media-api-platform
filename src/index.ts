@@ -12,6 +12,7 @@ import userRoutes from './routes/userRoutes';
 import contentRoutes from './routes/contentRoutes';
 import commentRoutes from './routes/commentRoutes';
 import socialRoutes from './routes/socialRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 const app = express();
 const PORT = env.PORT;
@@ -55,6 +56,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/posts', contentRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
