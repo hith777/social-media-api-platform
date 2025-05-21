@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import compression from 'compression';
 import { env } from './config/env';
@@ -6,6 +7,7 @@ import logger from './config/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
+import { initializeWebSocket } from './config/websocket';
 import healthRouter from './routes/health';
 import docsRouter from './routes/docs';
 import userRoutes from './routes/userRoutes';
@@ -15,6 +17,7 @@ import socialRoutes from './routes/socialRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = env.PORT;
 
 // Security middleware
@@ -61,9 +64,14 @@ app.use('/api/notifications', notificationRoutes);
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
+// Initialize WebSocket server
+const io = initializeWebSocket(httpServer);
+(global as any).io = io; // Make io available globally for notification emission
+
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT} in ${env.NODE_ENV} mode`);
+  logger.info(`WebSocket server initialized on /socket.io`);
 });
 
 export default app;
