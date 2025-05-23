@@ -240,6 +240,149 @@ export class SearchService {
       totalPages,
     };
   }
+
+  /**
+   * Get trending posts based on engagement and recency
+   * Algorithm considers: likes, comments, and recency (time decay)
+   */
+  async getTrendingPosts(
+    page: number = 1,
+    limit: number = 20,
+    userId?: string,
+    timeRange: 'day' | 'week' | 'month' | 'all' = 'week'
+  ): Promise<{
+    posts: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    // Calculate time threshold based on timeRange
+    const now = new Date();
+    let timeThreshold: Date;
+    switch (timeRange) {
+      case 'day':
+        timeThreshold = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'week':
+        timeThreshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        timeThreshold = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        timeThreshold = new Date(0); // All time
+    }
+
+    // Build visibility filter
+    const visibilityFilter: any[] = ['public'];
+    if (userId) {
+      visibilityFilter.push('friends');
+    }
+
+    const where: any = {
+      isDeleted: false as any,
+      visibility: { in: visibilityFilter },
+      createdAt: {
+        gte: timeThreshold,
+      },
+    };
+
+    // Exclude blocked users
+    if (userId) {
+      const blocked = await prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: userId },
+            { blockedId: userId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      const blockedIds = new Set<string>();
+      blocked.forEach((b) => {
+        if (b.blockerId === userId) blockedIds.add(b.blockedId);
+        if (b.blockedId === userId) blockedIds.add(b.blockerId);
+      });
+
+      if (blockedIds.size > 0) {
+        where.authorId = {
+          notIn: Array.from(blockedIds),
+        };
+      }
+    }
+
+    // Get all posts with their engagement metrics
+    const posts = await prisma.post.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+        likes: userId
+          ? {
+              where: { userId },
+              select: { userId: true },
+            }
+          : false,
+      },
+    }) as any;
+
+    // Calculate trending score for each post
+    // Score = (likes * 2 + comments * 3) / (hours_since_creation + 1)
+    // This gives more weight to comments and applies time decay
+    const postsWithScore = posts.map((post: any) => {
+      const hoursSinceCreation =
+        (now.getTime() - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+      const likesCount = post._count.likes || 0;
+      const commentsCount = post._count.comments || 0;
+      const engagementScore = likesCount * 2 + commentsCount * 3;
+      const trendingScore = engagementScore / (hoursSinceCreation + 1);
+
+      return {
+        ...post,
+        trendingScore,
+        isLiked: post.likes && post.likes.length > 0,
+      };
+    });
+
+    // Sort by trending score (descending)
+    postsWithScore.sort((a: any, b: any) => b.trendingScore - a.trendingScore);
+
+    // Apply pagination
+    const total = postsWithScore.length;
+    const paginatedPosts = postsWithScore.slice(skip, skip + limit);
+    const totalPages = Math.ceil(total / limit);
+
+    // Remove trendingScore from response (it was just for sorting)
+    const finalPosts = paginatedPosts.map(({ trendingScore, ...post }: any) => post);
+
+    return {
+      posts: finalPosts,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
 }
 
 export default new SearchService();

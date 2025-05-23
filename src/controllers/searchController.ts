@@ -67,3 +67,35 @@ export const searchUsers = [
   }),
 ];
 
+// Trending posts query schema
+const trendingQuerySchema = paginationSchema.extend({
+  timeRange: z.enum(['day', 'week', 'month', 'all']).optional(),
+});
+
+/**
+ * @route   GET /api/search/trending
+ * @desc    Get trending posts based on engagement and recency
+ * @access  Public (optional auth)
+ */
+export const getTrendingPosts = [
+  optionalAuthenticate,
+  validateQuery(trendingQuerySchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const queryParams = req.query as unknown as {
+      page?: number;
+      limit?: number;
+      timeRange?: 'day' | 'week' | 'month' | 'all';
+    };
+
+    const { page = 1, limit = 20, timeRange = 'week' } = queryParams;
+
+    const result = await searchService.getTrendingPosts(page, limit, userId, timeRange);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+];
+
