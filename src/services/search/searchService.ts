@@ -1,7 +1,21 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { cache } from '../../config/redis';
+import crypto from 'crypto';
 
 export class SearchService {
+  // Cache TTL in seconds (5 minutes)
+  private readonly CACHE_TTL = 300;
+
+  // Generate cache key for search queries
+  private generateCacheKey(prefix: string, params: Record<string, any>): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map((key) => `${key}:${JSON.stringify(params[key])}`)
+      .join('|');
+    const hash = crypto.createHash('md5').update(sortedParams).digest('hex');
+    return `search:${prefix}:${hash}`;
+  }
   /**
    * Full-text search for posts with filters and sorting
    */
@@ -36,6 +50,22 @@ export class SearchService {
 
     const searchQuery = query.trim();
     const skip = (page - 1) * limit;
+
+    // Generate cache key
+    const cacheKey = this.generateCacheKey('posts', {
+      q: searchQuery,
+      page,
+      limit,
+      userId: userId || 'anonymous',
+      filters,
+      sortBy,
+    });
+
+    // Try to get from cache
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     // Build visibility filter
     const visibilityFilter: any[] = ['public'];
@@ -220,13 +250,18 @@ export class SearchService {
       isLiked: post.likes && post.likes.length > 0,
     }));
 
-    return {
+    const result = {
       posts: postsWithLikes,
-      total: filteredPosts.length, // Use filtered count
+      total: filteredPosts.length,
       page,
       limit,
       totalPages: Math.ceil(filteredPosts.length / limit),
     };
+
+    // Cache the result
+    await cache.setJSON(cacheKey, result, this.CACHE_TTL);
+
+    return result;
   }
 
   /**
@@ -259,6 +294,22 @@ export class SearchService {
 
     const searchQuery = query.trim();
     const skip = (page - 1) * limit;
+
+    // Generate cache key
+    const cacheKey = this.generateCacheKey('users', {
+      q: searchQuery,
+      page,
+      limit,
+      userId: userId || 'anonymous',
+      filters,
+      sortBy,
+    });
+
+    // Try to get from cache
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     // Build search condition
     const where: any = {
@@ -390,13 +441,18 @@ export class SearchService {
 
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    const result = {
       users: sortedUsers,
       total,
       page,
       limit,
       totalPages,
     };
+
+    // Cache the result
+    await cache.setJSON(cacheKey, result, this.CACHE_TTL);
+
+    return result;
   }
 
   /**
@@ -416,6 +472,20 @@ export class SearchService {
     totalPages: number;
   }> {
     const skip = (page - 1) * limit;
+
+    // Generate cache key
+    const cacheKey = this.generateCacheKey('trending', {
+      page,
+      limit,
+      userId: userId || 'anonymous',
+      timeRange,
+    });
+
+    // Try to get from cache
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     // Calculate time threshold based on timeRange
     const now = new Date();
@@ -533,13 +603,18 @@ export class SearchService {
     // Remove trendingScore from response (it was just for sorting)
     const finalPosts = paginatedPosts.map(({ trendingScore, ...post }: any) => post);
 
-    return {
+    const result = {
       posts: finalPosts,
       total,
       page,
       limit,
       totalPages,
     };
+
+    // Cache the result
+    await cache.setJSON(cacheKey, result, this.CACHE_TTL);
+
+    return result;
   }
 }
 
