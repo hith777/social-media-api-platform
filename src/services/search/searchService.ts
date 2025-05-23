@@ -3,13 +3,22 @@ import { AppError } from '../../middleware/errorHandler';
 
 export class SearchService {
   /**
-   * Full-text search for posts
+   * Full-text search for posts with filters and sorting
    */
   async searchPosts(
     query: string,
     page: number = 1,
     limit: number = 20,
-    userId?: string
+    userId?: string,
+    filters?: {
+      visibility?: 'public' | 'private' | 'friends';
+      authorId?: string;
+      minLikes?: number;
+      minComments?: number;
+      dateFrom?: Date;
+      dateTo?: Date;
+    },
+    sortBy?: 'newest' | 'oldest' | 'popular' | 'relevance'
   ): Promise<{
     posts: any[];
     total: number;
@@ -34,6 +43,12 @@ export class SearchService {
       visibilityFilter.push('friends');
     }
 
+    // Apply custom visibility filter if provided
+    if (filters?.visibility) {
+      visibilityFilter.length = 0;
+      visibilityFilter.push(filters.visibility);
+    }
+
     // Use PostgreSQL full-text search with ILIKE for case-insensitive matching
     // For better performance, we can use PostgreSQL's full-text search features
     const where: any = {
@@ -46,8 +61,31 @@ export class SearchService {
             mode: 'insensitive',
           },
         },
+        {
+          author: {
+            username: {
+              contains: searchQuery,
+              mode: 'insensitive',
+            },
+          },
+        },
       ],
     };
+
+    // Apply additional filters
+    if (filters?.authorId) {
+      where.authorId = filters.authorId;
+    }
+
+    if (filters?.dateFrom || filters?.dateTo) {
+      where.createdAt = {};
+      if (filters.dateFrom) {
+        where.createdAt.gte = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        where.createdAt.lte = filters.dateTo;
+      }
+    }
 
     // Exclude blocked users
     if (userId) {
@@ -71,10 +109,36 @@ export class SearchService {
       });
 
       if (blockedIds.size > 0) {
-        where.authorId = {
-          notIn: Array.from(blockedIds),
-        };
+        if (where.authorId && typeof where.authorId === 'string') {
+          // If authorId filter exists and is blocked, return empty results
+          if (blockedIds.has(where.authorId)) {
+            return {
+              posts: [],
+              total: 0,
+              page,
+              limit,
+              totalPages: 0,
+            };
+          }
+        } else {
+          // Exclude blocked users
+          where.authorId = {
+            notIn: Array.from(blockedIds),
+          };
+        }
       }
+    }
+
+    // Build orderBy based on sortBy parameter
+    let orderBy: any = { createdAt: 'desc' }; // Default: newest first
+    if (sortBy === 'oldest') {
+      orderBy = { createdAt: 'asc' };
+    } else if (sortBy === 'popular') {
+      // For popular, we'll sort by engagement (likes + comments) after fetching
+      orderBy = { createdAt: 'desc' };
+    } else if (sortBy === 'relevance') {
+      // For relevance, prioritize posts with query in content over author username
+      orderBy = { createdAt: 'desc' };
     }
 
     const [posts, total] = await Promise.all([
@@ -103,39 +167,81 @@ export class SearchService {
               }
             : false,
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy,
         skip,
         take: limit,
       }) as any,
       prisma.post.count({ where }),
     ]);
 
+    // Apply engagement filters (minLikes, minComments) after fetching
+    let filteredPosts = posts;
+    if (filters?.minLikes !== undefined || filters?.minComments !== undefined) {
+      filteredPosts = posts.filter((post: any) => {
+        const likesCount = post._count?.likes || 0;
+        const commentsCount = post._count?.comments || 0;
+        if (filters.minLikes !== undefined && likesCount < filters.minLikes) {
+          return false;
+        }
+        if (filters.minComments !== undefined && commentsCount < filters.minComments) {
+          return false;
+        }
+        return true;
+      });
+    }
+
+    // Apply sorting for 'popular' and 'relevance'
+    if (sortBy === 'popular') {
+      filteredPosts.sort((a: any, b: any) => {
+        const aEngagement = (a._count?.likes || 0) + (a._count?.comments || 0);
+        const bEngagement = (b._count?.likes || 0) + (b._count?.comments || 0);
+        if (bEngagement !== aEngagement) {
+          return bEngagement - aEngagement;
+        }
+        // If engagement is equal, sort by newest
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    } else if (sortBy === 'relevance') {
+      // Sort by relevance: posts with query in content first, then by author username
+      filteredPosts.sort((a: any, b: any) => {
+        const aContentMatch = a.content.toLowerCase().includes(searchQuery.toLowerCase());
+        const bContentMatch = b.content.toLowerCase().includes(searchQuery.toLowerCase());
+        if (aContentMatch && !bContentMatch) return -1;
+        if (!aContentMatch && bContentMatch) return 1;
+        // If both match or both don't match, sort by newest
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
     const totalPages = Math.ceil(total / limit);
 
-    const postsWithLikes = posts.map((post: any) => ({
+    const postsWithLikes = filteredPosts.map((post: any) => ({
       ...post,
       isLiked: post.likes && post.likes.length > 0,
     }));
 
     return {
       posts: postsWithLikes,
-      total,
+      total: filteredPosts.length, // Use filtered count
       page,
       limit,
-      totalPages,
+      totalPages: Math.ceil(filteredPosts.length / limit),
     };
   }
 
   /**
-   * Search users by username, firstName, lastName, or email
+   * Search users by username, firstName, lastName, or email with filters and sorting
    */
   async searchUsers(
     query: string,
     page: number = 1,
     limit: number = 20,
-    userId?: string
+    userId?: string,
+    filters?: {
+      verifiedOnly?: boolean;
+      hasBio?: boolean;
+    },
+    sortBy?: 'relevance' | 'newest' | 'oldest' | 'username'
   ): Promise<{
     users: any[];
     total: number;
@@ -169,6 +275,19 @@ export class SearchService {
         { deletedAt: null },
       ],
     };
+
+    // Apply filters
+    if (filters?.verifiedOnly) {
+      where.AND.push({ isEmailVerified: true });
+    }
+
+    if (filters?.hasBio) {
+      where.AND.push({
+        bio: {
+          not: null,
+        },
+      });
+    }
 
     // Exclude blocked users if authenticated
     if (userId) {
@@ -207,6 +326,23 @@ export class SearchService {
       });
     }
 
+    // Build orderBy based on sortBy parameter
+    let orderBy: any[] = [
+      { isEmailVerified: 'desc' }, // Verified users first by default
+      { username: 'asc' }, // Then alphabetically
+    ];
+
+    if (sortBy === 'newest') {
+      orderBy = [{ createdAt: 'desc' }, { username: 'asc' }];
+    } else if (sortBy === 'oldest') {
+      orderBy = [{ createdAt: 'asc' }, { username: 'asc' }];
+    } else if (sortBy === 'username') {
+      orderBy = [{ username: 'asc' }];
+    } else if (sortBy === 'relevance') {
+      // For relevance, we'll sort after fetching based on match quality
+      orderBy = [{ isEmailVerified: 'desc' }, { username: 'asc' }];
+    }
+
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -220,20 +356,42 @@ export class SearchService {
           isEmailVerified: true,
           createdAt: true,
         },
-        orderBy: [
-          { isEmailVerified: 'desc' }, // Verified users first
-          { username: 'asc' }, // Then alphabetically
-        ],
+        orderBy,
         skip,
         take: limit,
       }),
       prisma.user.count({ where }),
     ]);
 
+    // Apply relevance sorting if needed
+    let sortedUsers = users;
+    if (sortBy === 'relevance') {
+      sortedUsers = users.sort((a, b) => {
+        // Prioritize exact username matches
+        const aUsernameMatch = a.username.toLowerCase() === searchQuery.toLowerCase();
+        const bUsernameMatch = b.username.toLowerCase() === searchQuery.toLowerCase();
+        if (aUsernameMatch && !bUsernameMatch) return -1;
+        if (!aUsernameMatch && bUsernameMatch) return 1;
+
+        // Then prioritize username starts with query
+        const aUsernameStarts = a.username.toLowerCase().startsWith(searchQuery.toLowerCase());
+        const bUsernameStarts = b.username.toLowerCase().startsWith(searchQuery.toLowerCase());
+        if (aUsernameStarts && !bUsernameStarts) return -1;
+        if (!aUsernameStarts && bUsernameStarts) return 1;
+
+        // Then prioritize verified users
+        if (a.isEmailVerified && !b.isEmailVerified) return -1;
+        if (!a.isEmailVerified && b.isEmailVerified) return 1;
+
+        // Finally, alphabetical
+        return a.username.localeCompare(b.username);
+      });
+    }
+
     const totalPages = Math.ceil(total / limit);
 
     return {
-      users,
+      users: sortedUsers,
       total,
       page,
       limit,

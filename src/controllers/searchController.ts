@@ -6,32 +6,66 @@ import { paginationSchema } from '../utils/validation';
 import { optionalAuthenticate } from '../middleware/auth';
 import { z } from 'zod';
 
-// Search query schema
-const searchQuerySchema = z.object({
+// Search query schema with filters and sorting
+const searchPostsQuerySchema = z.object({
   q: z.string().min(1, 'Search query is required').max(200, 'Search query cannot exceed 200 characters'),
   page: paginationSchema.shape.page,
   limit: paginationSchema.shape.limit,
+  visibility: z.enum(['public', 'private', 'friends']).optional(),
+  authorId: z.string().optional(),
+  minLikes: z.string().optional().transform((val) => (val ? parseInt(val, 10) : undefined)),
+  minComments: z.string().optional().transform((val) => (val ? parseInt(val, 10) : undefined)),
+  dateFrom: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
+  dateTo: z.string().optional().transform((val) => (val ? new Date(val) : undefined)),
+  sortBy: z.enum(['newest', 'oldest', 'popular', 'relevance']).optional(),
 });
 
 /**
  * @route   GET /api/search/posts
- * @desc    Search posts with full-text search
+ * @desc    Search posts with full-text search, filters, and sorting
  * @access  Public (optional auth)
  */
 export const searchPosts = [
   optionalAuthenticate,
-  validateQuery(searchQuerySchema),
+  validateQuery(searchPostsQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const queryParams = req.query as unknown as {
       q: string;
       page?: number;
       limit?: number;
+      visibility?: 'public' | 'private' | 'friends';
+      authorId?: string;
+      minLikes?: number;
+      minComments?: number;
+      dateFrom?: Date;
+      dateTo?: Date;
+      sortBy?: 'newest' | 'oldest' | 'popular' | 'relevance';
     };
 
-    const { q, page = 1, limit = 20 } = queryParams;
+    const {
+      q,
+      page = 1,
+      limit = 20,
+      visibility,
+      authorId,
+      minLikes,
+      minComments,
+      dateFrom,
+      dateTo,
+      sortBy = 'newest',
+    } = queryParams;
 
-    const result = await searchService.searchPosts(q, page, limit, userId);
+    const filters = {
+      ...(visibility && { visibility }),
+      ...(authorId && { authorId }),
+      ...(minLikes !== undefined && { minLikes }),
+      ...(minComments !== undefined && { minComments }),
+      ...(dateFrom && { dateFrom }),
+      ...(dateTo && { dateTo }),
+    };
+
+    const result = await searchService.searchPosts(q, page, limit, userId, filters, sortBy);
 
     res.json({
       success: true,
@@ -40,25 +74,43 @@ export const searchPosts = [
   }),
 ];
 
+// User search query schema with filters and sorting
+const searchUsersQuerySchema = z.object({
+  q: z.string().min(1, 'Search query is required').max(200, 'Search query cannot exceed 200 characters'),
+  page: paginationSchema.shape.page,
+  limit: paginationSchema.shape.limit,
+  verifiedOnly: z.string().optional().transform((val) => val === 'true'),
+  hasBio: z.string().optional().transform((val) => val === 'true'),
+  sortBy: z.enum(['relevance', 'newest', 'oldest', 'username']).optional(),
+});
+
 /**
  * @route   GET /api/search/users
- * @desc    Search users by username, name, or email
+ * @desc    Search users by username, name, or email with filters and sorting
  * @access  Public (optional auth)
  */
 export const searchUsers = [
   optionalAuthenticate,
-  validateQuery(searchQuerySchema),
+  validateQuery(searchUsersQuerySchema),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const queryParams = req.query as unknown as {
       q: string;
       page?: number;
       limit?: number;
+      verifiedOnly?: boolean;
+      hasBio?: boolean;
+      sortBy?: 'relevance' | 'newest' | 'oldest' | 'username';
     };
 
-    const { q, page = 1, limit = 20 } = queryParams;
+    const { q, page = 1, limit = 20, verifiedOnly, hasBio, sortBy = 'relevance' } = queryParams;
 
-    const result = await searchService.searchUsers(q, page, limit, userId);
+    const filters = {
+      ...(verifiedOnly !== undefined && { verifiedOnly }),
+      ...(hasBio !== undefined && { hasBio }),
+    };
+
+    const result = await searchService.searchUsers(q, page, limit, userId, filters, sortBy);
 
     res.json({
       success: true,
