@@ -40,3 +40,30 @@ export const searchPosts = [
   }),
 ];
 
+/**
+ * @route   GET /api/search/users
+ * @desc    Search users by username, name, or email
+ * @access  Public (optional auth)
+ */
+export const searchUsers = [
+  optionalAuthenticate,
+  validateQuery(searchQuerySchema),
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const queryParams = req.query as unknown as {
+      q: string;
+      page?: number;
+      limit?: number;
+    };
+
+    const { q, page = 1, limit = 20 } = queryParams;
+
+    const result = await searchService.searchUsers(q, page, limit, userId);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+];
+

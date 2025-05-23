@@ -127,6 +127,119 @@ export class SearchService {
       totalPages,
     };
   }
+
+  /**
+   * Search users by username, firstName, lastName, or email
+   */
+  async searchUsers(
+    query: string,
+    page: number = 1,
+    limit: number = 20,
+    userId?: string
+  ): Promise<{
+    users: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    if (!query || query.trim().length === 0) {
+      throw new AppError('Search query is required', 400);
+    }
+
+    if (query.length > 200) {
+      throw new AppError('Search query cannot exceed 200 characters', 400);
+    }
+
+    const searchQuery = query.trim();
+    const skip = (page - 1) * limit;
+
+    // Build search condition
+    const where: any = {
+      AND: [
+        {
+          OR: [
+            { username: { contains: searchQuery, mode: 'insensitive' } },
+            { firstName: { contains: searchQuery, mode: 'insensitive' } },
+            { lastName: { contains: searchQuery, mode: 'insensitive' } },
+            { email: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        { isActive: true },
+        { deletedAt: null },
+      ],
+    };
+
+    // Exclude blocked users if authenticated
+    if (userId) {
+      const blocked = await prisma.block.findMany({
+        where: {
+          OR: [
+            { blockerId: userId },
+            { blockedId: userId },
+          ],
+        },
+        select: {
+          blockerId: true,
+          blockedId: true,
+        },
+      });
+
+      const blockedIds = new Set<string>();
+      blocked.forEach((b) => {
+        if (b.blockerId === userId) blockedIds.add(b.blockedId);
+        if (b.blockedId === userId) blockedIds.add(b.blockerId);
+      });
+
+      if (blockedIds.size > 0) {
+        where.AND.push({
+          id: {
+            notIn: Array.from(blockedIds),
+          },
+        });
+      }
+
+      // Exclude self from search results
+      where.AND.push({
+        id: {
+          not: userId,
+        },
+      });
+    }
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          avatar: true,
+          bio: true,
+          isEmailVerified: true,
+          createdAt: true,
+        },
+        orderBy: [
+          { isEmailVerified: 'desc' }, // Verified users first
+          { username: 'asc' }, // Then alphabetically
+        ],
+        skip,
+        take: limit,
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
 }
 
 export default new SearchService();
