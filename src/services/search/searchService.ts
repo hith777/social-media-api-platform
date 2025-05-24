@@ -171,38 +171,35 @@ export class SearchService {
       orderBy = { createdAt: 'desc' };
     }
 
-    const [posts, total] = await Promise.all([
-      prisma.post.findMany({
-        where,
-        include: {
-          author: {
-            select: {
-              id: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              avatar: true,
-            },
+    const posts = await prisma.post.findMany({
+      where,
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
           },
-          _count: {
-            select: {
-              likes: true,
-              comments: true,
-            },
-          },
-          likes: userId
-            ? {
-                where: { userId },
-                select: { userId: true },
-              }
-            : false,
         },
-        orderBy,
-        skip,
-        take: limit,
-      }) as any,
-      prisma.post.count({ where }),
-    ]);
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+        likes: userId
+          ? {
+              where: { userId },
+              select: { userId: true },
+            }
+          : false,
+      },
+      orderBy,
+      skip,
+      take: limit,
+    }) as any;
 
     // Apply engagement filters (minLikes, minComments) after fetching
     let filteredPosts = posts;
