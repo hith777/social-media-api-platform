@@ -9,10 +9,8 @@ describe('Phase 6: Search & Discovery', () => {
   let testUser3: any;
   let accessToken1: string;
   let accessToken2: string;
-  let accessToken3: string;
   let testPost1: any;
   let testPost2: any;
-  let testPost3: any;
 
   beforeAll(async () => {
     // Clean up test data
@@ -120,12 +118,6 @@ describe('Phase 6: Search & Discovery', () => {
     });
     accessToken2 = login2.body.data.accessToken;
 
-    const login3 = await request(app).post('/api/users/login').send({
-      identifier: 'testuser3@example.com',
-      password: 'Test123!@#',
-    });
-    accessToken3 = login3.body.data.accessToken;
-
     // Create test posts
     testPost1 = await prisma.post.create({
       data: {
@@ -139,14 +131,6 @@ describe('Phase 6: Search & Discovery', () => {
       data: {
         authorId: testUser2.id,
         content: 'Another post about Node.js and Express framework development',
-        visibility: 'public',
-      },
-    });
-
-    testPost3 = await prisma.post.create({
-      data: {
-        authorId: testUser1.id,
-        content: 'Post about React and frontend development',
         visibility: 'public',
       },
     });
