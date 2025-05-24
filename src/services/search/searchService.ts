@@ -243,8 +243,6 @@ export class SearchService {
       });
     }
 
-    const totalPages = Math.ceil(total / limit);
-
     const postsWithLikes = filteredPosts.map((post: any) => ({
       ...post,
       isLiked: post.likes && post.likes.length > 0,
