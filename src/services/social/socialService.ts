@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { cache } from '../../config/redis';
 
 export class SocialService {
   /**
@@ -56,6 +57,11 @@ export class SocialService {
         followingId,
       },
     });
+
+    // Invalidate cache for followers/following lists
+    await cache.delPattern(`followers:${followingId}:*`);
+    await cache.delPattern(`following:${followerId}:*`);
+    await cache.delPattern(`feed:${followerId}:*`);
   }
 
   /**
@@ -80,6 +86,11 @@ export class SocialService {
         id: follow.id,
       },
     });
+
+    // Invalidate cache for followers/following lists
+    await cache.delPattern(`followers:${followingId}:*`);
+    await cache.delPattern(`following:${followerId}:*`);
+    await cache.delPattern(`feed:${followerId}:*`);
   }
 
   /**
@@ -110,6 +121,14 @@ export class SocialService {
     limit: number;
     totalPages: number;
   }> {
+    const cacheKey = `followers:${userId}:${page}:${limit}`;
+    
+    // Try cache first
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Verify user exists
     const user = await prisma.user.findFirst({
       where: {
@@ -161,13 +180,18 @@ export class SocialService {
       followedAt: follow.createdAt,
     }));
 
-    return {
+    const result = {
       followers: followersList,
       total,
       page,
       limit,
       totalPages,
     };
+
+    // Cache for 5 minutes
+    await cache.setJSON(cacheKey, result, 300);
+
+    return result;
   }
 
   /**
@@ -184,6 +208,14 @@ export class SocialService {
     limit: number;
     totalPages: number;
   }> {
+    const cacheKey = `following:${userId}:${page}:${limit}`;
+    
+    // Try cache first
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     // Verify user exists
     const user = await prisma.user.findFirst({
       where: {
@@ -235,13 +267,18 @@ export class SocialService {
       followedAt: follow.createdAt,
     }));
 
-    return {
+    const result = {
       following: followingList,
       total,
       page,
       limit,
       totalPages,
     };
+
+    // Cache for 5 minutes
+    await cache.setJSON(cacheKey, result, 300);
+
+    return result;
   }
 
   /**

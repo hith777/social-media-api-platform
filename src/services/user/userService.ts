@@ -5,6 +5,7 @@ import { User } from '@prisma/client';
 import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../utils/jwt';
 import { generateEmailVerificationToken, generatePasswordResetToken } from '../../utils/tokens';
 import { EmailService } from '../email/emailService';
+import { cache } from '../../config/redis';
 import fs from 'fs';
 import path from 'path';
 
@@ -291,6 +292,14 @@ export class UserService {
    * Get user profile by ID (public profile)
    */
   async getProfile(userId: string): Promise<any> {
+    const cacheKey = `user:profile:${userId}`;
+
+    // Try cache first
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -306,6 +315,11 @@ export class UserService {
       },
     });
 
+    // Cache for 10 minutes
+    if (user) {
+      await cache.setJSON(cacheKey, user, 600);
+    }
+
     return user;
   }
 
@@ -313,7 +327,22 @@ export class UserService {
    * Get own profile (includes email)
    */
   async getOwnProfile(userId: string): Promise<any> {
-    return this.findById(userId);
+    const cacheKey = `user:own:${userId}`;
+
+    // Try cache first
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const user = await this.findById(userId);
+
+    // Cache for 5 minutes (own profile changes more frequently)
+    if (user) {
+      await cache.setJSON(cacheKey, user, 300);
+    }
+
+    return user;
   }
 
   /**

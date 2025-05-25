@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
+import { cache } from '../../config/redis';
 
 export class ContentService {
   /**
@@ -61,6 +62,14 @@ export class ContentService {
    * Get a single post by ID
    */
   async getPostById(postId: string, userId?: string): Promise<any> {
+    const cacheKey = `post:${postId}:${userId || 'anonymous'}`;
+    
+    // Try cache first
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const post = await prisma.post.findFirst({
       where: {
         id: postId,
@@ -146,10 +155,15 @@ export class ContentService {
     }
     // 'public' posts are visible to everyone (no additional check needed)
 
-    return {
+    const result = {
       ...post,
       isLiked: (post as any).likes && (post as any).likes.length > 0,
     };
+
+    // Cache for 5 minutes
+    await cache.setJSON(cacheKey, result, 300);
+
+    return result;
   }
 
   /**
@@ -167,6 +181,13 @@ export class ContentService {
     totalPages: number;
   }> {
     const skip = (page - 1) * limit;
+    const cacheKey = `feed:${userId}:${page}:${limit}`;
+    
+    // Try cache first (shorter TTL for feeds as they change frequently)
+    const cached = await cache.getJSON<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
     // Get user's following list
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
@@ -242,7 +263,7 @@ export class ContentService {
 
     const totalPages = Math.ceil(total / limit);
 
-    return {
+    const result = {
       posts: posts.map((post) => ({
         ...post,
         isLiked: (post as any).likes && (post as any).likes.length > 0,
@@ -252,6 +273,11 @@ export class ContentService {
       limit,
       totalPages,
     };
+
+    // Cache for 2 minutes (feeds change frequently)
+    await cache.setJSON(cacheKey, result, 120);
+
+    return result;
   }
 
   /**
@@ -599,10 +625,16 @@ export class ContentService {
       },
     });
 
-    return {
+    const result = {
       ...updatedPost,
       isLiked: (updatedPost as any).likes && (updatedPost as any).likes.length > 0,
     };
+
+    // Invalidate cache for this post and feeds
+    await cache.delPattern(`post:${postId}:*`);
+    await cache.delPattern(`feed:${userId}:*`);
+
+    return result;
   }
 
   /**
@@ -631,6 +663,10 @@ export class ContentService {
         deletedAt: new Date() as any,
       },
     });
+
+    // Invalidate cache for this post and feeds
+    await cache.delPattern(`post:${postId}:*`);
+    await cache.delPattern(`feed:${userId}:*`);
   }
 
   /**
