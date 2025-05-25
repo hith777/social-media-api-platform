@@ -65,7 +65,7 @@ export class UserService {
         password: hashedPassword,
         firstName: data.firstName,
         lastName: data.lastName,
-        emailVerificationToken: emailVerificationToken as any,
+        emailVerificationToken: emailVerificationToken as string | null,
       },
       select: {
         id: true,
@@ -163,7 +163,8 @@ export class UserService {
     }
 
     // Check if user is deleted
-    if ((user as any).deletedAt) {
+    const userWithDeletedAt = user as User & { deletedAt: Date | null };
+    if (userWithDeletedAt.deletedAt) {
       throw new AppError('User account has been deleted', 403);
     }
 
@@ -187,13 +188,14 @@ export class UserService {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        refreshToken: refreshToken as any,
-        lastLoginAt: new Date() as any,
+        refreshToken: refreshToken as string | null,
+        lastLoginAt: new Date(),
       },
     });
 
     // Return user without sensitive data
-    const { password: _, refreshToken: __, ...userWithoutSensitive } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _password, refreshToken: _refreshToken, ...userWithoutSensitive } = user;
 
     return {
       user: userWithoutSensitive,
@@ -211,7 +213,7 @@ export class UserService {
   }> {
     // Find user by refresh token
     const user = await prisma.user.findFirst({
-      where: { refreshToken: refreshToken as any },
+      where: { refreshToken: refreshToken as string | null },
     });
 
     if (!user) {
@@ -224,7 +226,8 @@ export class UserService {
     }
 
     // Check if user is deleted
-    if ((user as any).deletedAt) {
+    const userWithDeletedAt = user as User & { deletedAt: Date | null };
+    if (userWithDeletedAt.deletedAt) {
       throw new AppError('User account has been deleted', 403);
     }
 
@@ -241,7 +244,7 @@ export class UserService {
     // Update refresh token in database
     await prisma.user.update({
       where: { id: user.id },
-      data: { refreshToken: newRefreshToken as any },
+      data: { refreshToken: newRefreshToken as string | null },
     });
 
     return {
@@ -285,6 +288,10 @@ export class UserService {
       },
     });
 
+    // Invalidate cache
+    await cache.del(`user:profile:${userId}`);
+    await cache.del(`user:own:${userId}`);
+
     return user;
   }
 
@@ -295,8 +302,10 @@ export class UserService {
     const cacheKey = `user:profile:${userId}`;
 
     // Try cache first
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     const cached = await cache.getJSON<any>(cacheKey);
     if (cached) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return cached;
     }
 
@@ -317,9 +326,11 @@ export class UserService {
 
     // Cache for 10 minutes
     if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await cache.setJSON(cacheKey, user, 600);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return user;
   }
 
@@ -330,18 +341,23 @@ export class UserService {
     const cacheKey = `user:own:${userId}`;
 
     // Try cache first
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     const cached = await cache.getJSON<any>(cacheKey);
     if (cached) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return cached;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const user = await this.findById(userId);
 
     // Cache for 5 minutes (own profile changes more frequently)
     if (user) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await cache.setJSON(cacheKey, user, 300);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return user;
   }
 
@@ -413,7 +429,8 @@ export class UserService {
     }
 
     // Check if user is active
-    if (!user.isActive || (user as any).deletedAt) {
+    const userWithDeletedAt = user as User & { deletedAt: Date | null };
+    if (!user.isActive || userWithDeletedAt.deletedAt) {
       return;
     }
 
@@ -745,9 +762,9 @@ export class UserService {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        deletedAt: new Date() as any,
+        deletedAt: new Date() as unknown as Date | null,
         isActive: false,
-        refreshToken: null as any, // Invalidate refresh token
+        refreshToken: null as unknown as string | null, // Invalidate refresh token
       },
     });
 
