@@ -44,6 +44,7 @@ model User {
   @@index([username])
   @@index([isActive])
   @@index([deletedAt])
+  @@index([isActive, deletedAt])
   @@map("users")
 }
 
@@ -82,6 +83,9 @@ model Post {
   @@index([visibility])
   @@index([isDeleted])
   @@index([createdAt])
+  @@index([authorId, createdAt])
+  @@index([visibility, isDeleted, createdAt])
+  @@index([isDeleted, createdAt])
   @@map("posts")
 }
 
@@ -107,6 +111,8 @@ model Comment {
   @@index([parentId])
   @@index([isDeleted])
   @@index([createdAt])
+  @@index([postId, createdAt])
+  @@index([postId, parentId, createdAt])
   @@map("comments")
 }
 
@@ -127,6 +133,8 @@ model Like {
   @@index([postId])
   @@index([commentId])
   @@index([createdAt])
+  @@index([postId, createdAt])
+  @@index([commentId, createdAt])
   @@map("likes")
 }
 
@@ -179,6 +187,7 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
 
