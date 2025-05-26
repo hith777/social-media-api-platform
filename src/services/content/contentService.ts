@@ -424,30 +424,31 @@ export class ContentService {
 
     if (filters.visibility) {
       where.visibility = filters.visibility;
-    } else if (filters.authorId) {
-      // When filtering by author, determine visibility based on relationship
-      if (userId === filters.authorId) {
-        // Viewing own posts - show all visibility levels
-        where.visibility = { in: ['public', 'private', 'friends'] as any };
-      } else if (userId) {
-        // Check if user follows the author
-        const follows = await prisma.follow.findFirst({
-          where: {
-            followerId: userId,
-            followingId: filters.authorId,
-          },
-        });
-        if (follows) {
-          // Show public and friends posts
-          where.visibility = { in: ['public', 'friends'] as any };
+      } else if (filters.authorId) {
+        // When filtering by author, determine visibility based on relationship
+        if (userId === filters.authorId) {
+          // Viewing own posts - show all visibility levels
+          where.visibility = { in: ['public', 'private', 'friends'] as any };
+        } else if (userId) {
+          // Batch check if user follows the author (optimize for potential multiple authors)
+          const follows = await prisma.follow.findFirst({
+            where: {
+              followerId: userId,
+              followingId: filters.authorId,
+            },
+            select: { id: true }, // Only select id for existence check
+          });
+          if (follows) {
+            // Show public and friends posts
+            where.visibility = { in: ['public', 'friends'] as any };
+          } else {
+            // Only show public posts
+            where.visibility = 'public';
+          }
         } else {
-          // Only show public posts
+          // Not authenticated - only show public posts
           where.visibility = 'public';
         }
-      } else {
-        // Not authenticated - only show public posts
-        where.visibility = 'public';
-      }
     } else {
       // No author filter - default to public for unauthenticated users
       if (!userId) {
@@ -465,26 +466,22 @@ export class ContentService {
       };
     }
 
-    // Exclude blocked users
+    // Exclude blocked users (batch query optimization)
     if (userId) {
-      const blocked = await prisma.block.findMany({
-        where: {
-          OR: [
-            { blockerId: userId },
-            { blockedId: userId },
-          ],
-        },
-        select: {
-          blockerId: true,
-          blockedId: true,
-        },
-      });
+      const [blockedAsBlocker, blockedAsBlocked] = await Promise.all([
+        prisma.block.findMany({
+          where: { blockerId: userId },
+          select: { blockedId: true },
+        }),
+        prisma.block.findMany({
+          where: { blockedId: userId },
+          select: { blockerId: true },
+        }),
+      ]);
 
       const blockedIds = new Set<string>();
-      blocked.forEach((b) => {
-        if (b.blockerId === userId) blockedIds.add(b.blockedId);
-        if (b.blockedId === userId) blockedIds.add(b.blockerId);
-      });
+      blockedAsBlocker.forEach((b) => blockedIds.add(b.blockedId));
+      blockedAsBlocked.forEach((b) => blockedIds.add(b.blockerId));
 
       if (blockedIds.size > 0) {
         where.authorId = {
@@ -884,24 +881,69 @@ export class ContentService {
       }),
     ]);
 
-    // For each top-level comment, fetch its replies (nested) with pagination
-    const commentsWithReplies = await Promise.all(
-      topLevelComments.map(async (comment) => {
-        const repliesResult = await this.getCommentReplies(
-          comment.id,
-          userId,
-          3,
-          repliesLimit
-        );
-        return {
-          ...comment,
-          isLiked: (comment as any).likes && (comment as any).likes.length > 0,
-          replies: repliesResult.replies,
-          repliesCount: repliesResult.total,
-          hasMoreReplies: repliesResult.total > repliesLimit,
-        };
-      })
-    );
+    // Batch fetch all replies for top-level comments to avoid N+1 queries
+    const topLevelCommentIds = topLevelComments.map((c) => c.id);
+    const allReplies = topLevelCommentIds.length > 0
+      ? await prisma.comment.findMany({
+          where: {
+            parentId: { in: topLevelCommentIds },
+            isDeleted: false,
+          },
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+              },
+            },
+            _count: {
+              select: {
+                likes: true,
+                replies: true,
+              },
+            },
+            likes: userId
+              ? {
+                  where: { userId },
+                  select: { userId: true },
+                }
+              : false,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        })
+      : [];
+
+    // Group replies by parentId
+    const repliesByParent = new Map<string, any[]>();
+    allReplies.forEach((reply) => {
+      if (reply.parentId) {
+        if (!repliesByParent.has(reply.parentId)) {
+          repliesByParent.set(reply.parentId, []);
+        }
+        repliesByParent.get(reply.parentId)!.push(reply);
+      }
+    });
+
+    // Build comment tree efficiently
+    const commentsWithReplies = topLevelComments.map((comment) => {
+      const replies = repliesByParent.get(comment.id) || [];
+      const limitedReplies = replies.slice(0, repliesLimit);
+      return {
+        ...comment,
+        isLiked: (comment as any).likes && (comment as any).likes.length > 0,
+        replies: limitedReplies.map((reply: any) => ({
+          ...reply,
+          isLiked: (reply as any).likes && (reply as any).likes.length > 0,
+        })),
+        repliesCount: replies.length,
+        hasMoreReplies: replies.length > repliesLimit,
+      };
+    });
 
     const totalPages = Math.ceil(total / limit);
 
