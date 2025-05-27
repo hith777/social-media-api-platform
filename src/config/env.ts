@@ -23,6 +23,10 @@ const envSchema = z.object({
   UPLOAD_DIR: z.string().default('uploads'),
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
+  // Connection pool settings
+  DATABASE_POOL_SIZE: z.string().transform(Number).optional(),
+  DATABASE_CONNECTION_TIMEOUT: z.string().transform(Number).optional(),
+  DATABASE_QUERY_TIMEOUT: z.string().transform(Number).optional(),
 });
 
 // Validate and parse environment variables

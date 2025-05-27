@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import prisma from '../config/database';
+import prisma, { healthCheck as dbHealthCheck, getConnectionPoolStats } from '../config/database';
 import { createClient } from 'redis';
 import { env } from '../config/env';
 import logger from '../config/logger';
@@ -35,10 +35,16 @@ router.get(
       },
     };
 
-    // Check database connection
+    // Check database connection with pool health
     try {
-      await prisma.$queryRaw`SELECT 1`;
-      healthStatus.services.database = 'connected';
+      const dbHealth = await dbHealthCheck();
+      healthStatus.services.database = dbHealth.status === 'healthy' ? 'connected' : 'degraded';
+      if (dbHealth.latency) {
+        (healthStatus.services as any).databaseLatency = `${dbHealth.latency}ms`;
+      }
+      if (dbHealth.status === 'unhealthy') {
+        healthStatus.status = 'degraded';
+      }
     } catch (error) {
       healthStatus.services.database = 'disconnected';
       healthStatus.status = 'degraded';
