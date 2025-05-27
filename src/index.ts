@@ -16,6 +16,7 @@ import commentRoutes from './routes/commentRoutes';
 import socialRoutes from './routes/socialRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import searchRoutes from './routes/searchRoutes';
+import batchRoutes from './routes/batchRoutes';
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,6 +63,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/batch', batchRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

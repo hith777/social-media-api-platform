@@ -64,4 +64,19 @@ export const commentContentSchema = z
   .min(1, 'Comment content cannot be empty')
   .max(2000, 'Comment content cannot exceed 2000 characters');
 
+// Batch request validation
+export const batchRequestSchema = z.object({
+  requests: z
+    .array(
+      z.object({
+        method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']),
+        path: z.string().min(1, 'Path is required'),
+        body: z.any().optional(),
+        headers: z.record(z.string()).optional(),
+      })
+    )
+    .min(1, 'At least one request is required')
+    .max(20, 'Maximum 20 requests per batch'),
+});
+
 
