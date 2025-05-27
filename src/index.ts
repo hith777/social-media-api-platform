@@ -1,12 +1,12 @@
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
-import compression from 'compression';
 import { env } from './config/env';
 import logger from './config/logger';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
+import { compressionMiddleware } from './middleware/compression';
 import { initializeWebSocket } from './config/websocket';
 import healthRouter from './routes/health';
 import docsRouter from './routes/docs';
@@ -31,8 +31,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Compression middleware
-app.use(compression());
+// Compression middleware (optimized for API responses)
+app.use(compressionMiddleware);
 
 // Serve static files (uploads)
 app.use('/uploads', express.static('uploads'));

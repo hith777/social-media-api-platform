@@ -135,3 +135,4 @@ export function createCursor(timestamp: Date, id: string): string {
   return Buffer.from(payload).toString('base64');
 }
 
+
