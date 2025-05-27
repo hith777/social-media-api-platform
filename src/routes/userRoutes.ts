@@ -18,7 +18,11 @@ import {
   deleteAccount,
 } from '../controllers/userController';
 import { authLimiter } from '../middleware/rateLimiter';
-import { uploadAvatarMiddleware, handleUploadError } from '../middleware/upload';
+import {
+  uploadAvatarMiddleware,
+  handleUploadError,
+  optimizeAvatarAfterUpload,
+} from '../middleware/upload';
 
 const router = Router();
 
@@ -35,7 +39,13 @@ router.get('/search', searchUsers);
 router.get('/me', getOwnProfile);
 router.put('/me', updateOwnProfile);
 router.delete('/me', deleteAccount);
-router.post('/me/avatar', uploadAvatarMiddleware.single('avatar'), handleUploadError, uploadAvatar);
+router.post(
+  '/me/avatar',
+  uploadAvatarMiddleware.single('avatar'),
+  handleUploadError,
+  optimizeAvatarAfterUpload,
+  uploadAvatar
+);
 router.post('/resend-verification', resendVerification);
 router.post('/block', blockUser);
 router.post('/unblock', unblockUser);

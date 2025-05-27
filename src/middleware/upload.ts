@@ -1,9 +1,10 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { Response, NextFunction } from 'express';
+import { Response, NextFunction, Request } from 'express';
 import { env } from '../config/env';
 import { AppError } from './errorHandler';
+import { optimizeAvatar, optimizePostMedia } from '../utils/imageOptimization';
 
 // Ensure upload directory exists
 const uploadDir = env.UPLOAD_DIR || 'uploads';
@@ -20,16 +21,15 @@ if (!fs.existsSync(postMediaDir)) {
   fs.mkdirSync(postMediaDir, { recursive: true });
 }
 
-// Configure storage
+// Configure storage for avatars
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, avatarDir);
   },
   filename: (_req, file, cb) => {
-    // Generate unique filename: timestamp-random-originalname
+    // Generate unique filename: timestamp-random.webp (will be optimized to webp)
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar-${uniqueSuffix}${ext}`);
+    cb(null, `avatar-${uniqueSuffix}.webp`);
   },
 });
 
@@ -69,10 +69,9 @@ const postMediaStorage = multer.diskStorage({
     cb(null, postMediaDir);
   },
   filename: (_req, file, cb) => {
-    // Generate unique filename: timestamp-random-originalname
+    // Generate unique filename: timestamp-random.webp (will be optimized to webp)
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, `post-${uniqueSuffix}${ext}`);
+    cb(null, `post-${uniqueSuffix}.webp`);
   },
 });
 
@@ -106,6 +105,54 @@ export const uploadPostMediaMiddleware = multer({
     files: 10, // Maximum 10 files
   },
 });
+
+// Middleware to optimize avatar after upload
+export const optimizeAvatarAfterUpload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.file) {
+    return next();
+  }
+
+  try {
+    const originalPath = req.file.path;
+    // Optimize the uploaded avatar
+    await optimizeAvatar(originalPath, originalPath);
+    next();
+  } catch (error) {
+    // If optimization fails, continue with original file
+    console.error('Avatar optimization failed:', error);
+    next();
+  }
+};
+
+// Middleware to optimize post media after upload
+export const optimizePostMediaAfterUpload = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+    return next();
+  }
+
+  try {
+    const files = Array.isArray(req.files) ? req.files : [req.files];
+    
+    // Optimize all uploaded files
+    await Promise.all(
+      files.map((file) => optimizePostMedia(file.path, file.path))
+    );
+    
+    next();
+  } catch (error) {
+    // If optimization fails, continue with original files
+    console.error('Post media optimization failed:', error);
+    next();
+  }
+};
 
 // Middleware to handle upload errors
 export const handleUploadError = (

@@ -15,6 +15,7 @@ import { authenticate, optionalAuthenticate } from '../middleware/auth';
 import {
   uploadPostMediaMiddleware,
   handleUploadError,
+  optimizePostMediaAfterUpload,
 } from '../middleware/upload';
 
 const router = Router();
@@ -29,6 +30,7 @@ router.post(
   authenticate,
   uploadPostMediaMiddleware.array('media', 10),
   handleUploadError,
+  optimizePostMediaAfterUpload,
   createPost
 );
 router.get('/feed', authenticate, getFeed);
@@ -44,6 +46,7 @@ router.put(
   authenticate,
   uploadPostMediaMiddleware.array('media', 10),
   handleUploadError,
+  optimizePostMediaAfterUpload,
   updatePost
 );
 router.delete('/:id', authenticate, deletePost);
