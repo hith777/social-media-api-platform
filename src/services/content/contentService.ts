@@ -1,6 +1,13 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { cache } from '../../config/redis';
+import {
+  calculateSkip,
+  calculateTotalPages,
+  createPaginationResult,
+  normalizePagination,
+  type PaginationResult,
+} from '../../utils/pagination';
 
 export class ContentService {
   /**
@@ -173,15 +180,10 @@ export class ContentService {
     userId: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<{
-    posts: any[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const skip = (page - 1) * limit;
-    const cacheKey = `feed:${userId}:${page}:${limit}`;
+  ): Promise<PaginationResult<any>> {
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
+    const cacheKey = `feed:${userId}:${normalizedPage}:${normalizedLimit}`;
     
     // Try cache first (shorter TTL for feeds as they change frequently)
     const cached = await cache.getJSON<any>(cacheKey);
@@ -261,18 +263,17 @@ export class ContentService {
       }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const postsWithLikes = posts.map((post) => ({
+      ...post,
+      isLiked: (post as any).likes && (post as any).likes.length > 0,
+    }));
 
-    const result = {
-      posts: posts.map((post) => ({
-        ...post,
-        isLiked: (post as any).likes && (post as any).likes.length > 0,
-      })),
+    const result = createPaginationResult(
+      postsWithLikes,
       total,
-      page,
-      limit,
-      totalPages,
-    };
+      normalizedPage,
+      normalizedLimit
+    );
 
     // Cache for 2 minutes (feeds change frequently)
     await cache.setJSON(cacheKey, result, 120);
@@ -833,7 +834,8 @@ export class ContentService {
       throw new AppError('Post not found', 404);
     }
 
-    const skip = (page - 1) * limit;
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     // Get top-level comments (parentId is null)
     const [topLevelComments, total] = await Promise.all([
@@ -945,15 +947,12 @@ export class ContentService {
       };
     });
 
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      comments: commentsWithReplies,
+    return createPaginationResult(
+      commentsWithReplies,
       total,
-      page,
-      limit,
-      totalPages,
-    };
+      normalizedPage,
+      normalizedLimit
+    );
   }
 
   /**

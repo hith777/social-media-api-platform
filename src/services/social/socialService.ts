@@ -1,6 +1,12 @@
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { cache } from '../../config/redis';
+import {
+  calculateSkip,
+  createPaginationResult,
+  normalizePagination,
+  type PaginationResult,
+} from '../../utils/pagination';
 
 export class SocialService {
   /**
@@ -180,13 +186,12 @@ export class SocialService {
       followedAt: follow.createdAt,
     }));
 
-    const result = {
-      followers: followersList,
+    const result = createPaginationResult(
+      followersList,
       total,
-      page,
-      limit,
-      totalPages,
-    };
+      normalizedPage,
+      normalizedLimit
+    );
 
     // Cache for 5 minutes
     await cache.setJSON(cacheKey, result, 300);
@@ -267,13 +272,12 @@ export class SocialService {
       followedAt: follow.createdAt,
     }));
 
-    const result = {
-      following: followingList,
+    const result = createPaginationResult(
+      followingList,
       total,
-      page,
-      limit,
-      totalPages,
-    };
+      normalizedPage,
+      normalizedLimit
+    );
 
     // Cache for 5 minutes
     await cache.setJSON(cacheKey, result, 300);

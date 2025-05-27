@@ -6,6 +6,12 @@ import { generateAccessToken, generateRefreshToken, TokenPayload } from '../../u
 import { generateEmailVerificationToken, generatePasswordResetToken } from '../../utils/tokens';
 import { EmailService } from '../email/emailService';
 import { cache } from '../../config/redis';
+import {
+  calculateSkip,
+  createPaginationResult,
+  normalizePagination,
+  type PaginationResult,
+} from '../../utils/pagination';
 import fs from 'fs';
 import path from 'path';
 
@@ -541,14 +547,9 @@ export class UserService {
     query: string,
     page: number = 1,
     limit: number = 10
-  ): Promise<{
-    users: Array<any>;
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const skip = (page - 1) * limit;
+  ): Promise<PaginationResult<any>> {
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     // Build search condition
     const where = {
@@ -589,15 +590,7 @@ export class UserService {
       prisma.user.count({ where }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      users,
-      total,
-      page,
-      limit,
-      totalPages,
-    };
+    return createPaginationResult(users, total, normalizedPage, normalizedLimit);
   }
 
   /**
@@ -683,13 +676,14 @@ export class UserService {
     limit: number;
     totalPages: number;
   }> {
-    const skip = (page - 1) * limit;
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     const [blocks, total] = await Promise.all([
       prisma.block.findMany({
         where: { blockerId: userId },
         skip,
-        take: limit,
+        take: normalizedLimit,
         include: {
           blockedUser: {
             select: {
@@ -715,14 +709,10 @@ export class UserService {
     ]);
 
     const users = blocks.map((block) => block.blockedUser);
-    const totalPages = Math.ceil(total / limit);
-
+    const paginationResult = createPaginationResult(users, total, normalizedPage, normalizedLimit);
     return {
-      users,
-      total,
-      page,
-      limit,
-      totalPages,
+      ...paginationResult,
+      users: paginationResult.data,
     };
   }
 
