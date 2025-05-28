@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import prisma, { healthCheck as dbHealthCheck, getConnectionPoolStats } from '../config/database';
+import prisma, { healthCheck as dbHealthCheck } from '../config/database';
 import { createClient } from 'redis';
 import { env } from '../config/env';
 import logger from '../config/logger';
