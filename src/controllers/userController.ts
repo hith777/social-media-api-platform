@@ -425,6 +425,8 @@ export const getBlockedUsers = [
         limit: result.limit,
         total: result.total,
         totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
       },
     });
   }),

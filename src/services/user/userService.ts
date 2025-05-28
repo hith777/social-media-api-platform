@@ -675,6 +675,8 @@ export class UserService {
     page: number;
     limit: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   }> {
     const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
     const skip = calculateSkip(normalizedPage, normalizedLimit);
