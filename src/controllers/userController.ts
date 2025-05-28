@@ -323,12 +323,14 @@ export const searchUsers = [
 
     res.json({
       success: true,
-      data: result.users,
+      data: result.data,
       pagination: {
         page: result.page,
         limit: result.limit,
         total: result.total,
         totalPages: result.totalPages,
+        hasNextPage: result.hasNextPage,
+        hasPreviousPage: result.hasPreviousPage,
       },
     });
   }),
