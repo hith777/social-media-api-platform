@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, avatarDir);
   },
-  filename: (_req, file, cb) => {
+  filename: (_req, _file, cb) => {
     // Generate unique filename: timestamp-random.webp (will be optimized to webp)
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, `avatar-${uniqueSuffix}.webp`);
@@ -68,7 +68,7 @@ const postMediaStorage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, postMediaDir);
   },
-  filename: (_req, file, cb) => {
+  filename: (_req, _file, cb) => {
     // Generate unique filename: timestamp-random.webp (will be optimized to webp)
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, `post-${uniqueSuffix}.webp`);
@@ -109,7 +109,7 @@ export const uploadPostMediaMiddleware = multer({
 // Middleware to optimize avatar after upload
 export const optimizeAvatarAfterUpload = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   if (!req.file) {
@@ -131,7 +131,7 @@ export const optimizeAvatarAfterUpload = async (
 // Middleware to optimize post media after upload
 export const optimizePostMediaAfterUpload = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
@@ -139,7 +139,20 @@ export const optimizePostMediaAfterUpload = async (
   }
 
   try {
-    const files = Array.isArray(req.files) ? req.files : [req.files];
+    // req.files can be File[] or { [fieldname: string]: File[] } | File[]
+    // We need to handle both cases
+    let files: Express.Multer.File[] = [];
+    
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else if (typeof req.files === 'object') {
+      // If it's an object with field names, get all files
+      files = Object.values(req.files).flat();
+    }
+    
+    if (files.length === 0) {
+      return next();
+    }
     
     // Optimize all uploaded files
     await Promise.all(
@@ -158,7 +171,7 @@ export const optimizePostMediaAfterUpload = async (
 export const handleUploadError = (
   err: Error,
   _req: Express.Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): void => {
   if (err instanceof multer.MulterError) {
