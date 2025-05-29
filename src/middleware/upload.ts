@@ -171,7 +171,7 @@ export const optimizePostMediaAfterUpload = async (
 export const handleUploadError = (
   err: Error,
   _req: Express.Request,
-  _res: Response,
+  res: Response,
   next: NextFunction
 ): void => {
   if (err instanceof multer.MulterError) {
