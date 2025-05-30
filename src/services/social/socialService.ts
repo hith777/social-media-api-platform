@@ -5,7 +5,6 @@ import {
   calculateSkip,
   createPaginationResult,
   normalizePagination,
-  type PaginationResult,
 } from '../../utils/pagination';
 
 export class SocialService {
@@ -126,8 +125,11 @@ export class SocialService {
     page: number;
     limit: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   }> {
-    const cacheKey = `followers:${userId}:${page}:${limit}`;
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const cacheKey = `followers:${userId}:${normalizedPage}:${normalizedLimit}`;
     
     // Try cache first
     const cached = await cache.getJSON<any>(cacheKey);
@@ -147,7 +149,7 @@ export class SocialService {
       throw new AppError('User not found', 404);
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     const [followers, total] = await Promise.all([
       prisma.follow.findMany({
@@ -170,7 +172,7 @@ export class SocialService {
           createdAt: 'desc',
         },
         skip,
-        take: limit,
+        take: normalizedLimit,
       }) as any,
       prisma.follow.count({
         where: {
@@ -179,19 +181,22 @@ export class SocialService {
       }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
-
     const followersList = followers.map((follow: any) => ({
       ...follow.follower,
       followedAt: follow.createdAt,
     }));
 
-    const result = createPaginationResult(
+    const paginationResult = createPaginationResult(
       followersList,
       total,
       normalizedPage,
       normalizedLimit
     );
+
+    const result = {
+      ...paginationResult,
+      followers: paginationResult.data,
+    };
 
     // Cache for 5 minutes
     await cache.setJSON(cacheKey, result, 300);
@@ -212,8 +217,11 @@ export class SocialService {
     page: number;
     limit: number;
     totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
   }> {
-    const cacheKey = `following:${userId}:${page}:${limit}`;
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const cacheKey = `following:${userId}:${normalizedPage}:${normalizedLimit}`;
     
     // Try cache first
     const cached = await cache.getJSON<any>(cacheKey);
@@ -233,7 +241,7 @@ export class SocialService {
       throw new AppError('User not found', 404);
     }
 
-    const skip = (page - 1) * limit;
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     const [following, total] = await Promise.all([
       prisma.follow.findMany({
@@ -256,7 +264,7 @@ export class SocialService {
           createdAt: 'desc',
         },
         skip,
-        take: limit,
+        take: normalizedLimit,
       }) as any,
       prisma.follow.count({
         where: {
@@ -265,19 +273,22 @@ export class SocialService {
       }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
-
     const followingList = following.map((follow: any) => ({
       ...follow.following,
       followedAt: follow.createdAt,
     }));
 
-    const result = createPaginationResult(
+    const paginationResult = createPaginationResult(
       followingList,
       total,
       normalizedPage,
       normalizedLimit
     );
+
+    const result = {
+      ...paginationResult,
+      following: paginationResult.data,
+    };
 
     // Cache for 5 minutes
     await cache.setJSON(cacheKey, result, 300);

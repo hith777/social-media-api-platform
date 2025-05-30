@@ -1,17 +1,8 @@
-import { ContentService } from '../content/contentService';
-import { UserService } from '../user/userService';
 import prisma from '../../config/database';
 import { AppError } from '../../middleware/errorHandler';
 import { cache } from '../../config/redis';
 
 export class BatchService {
-  private contentService: ContentService;
-  private userService: UserService;
-
-  constructor() {
-    this.contentService = new ContentService();
-    this.userService = new UserService();
-  }
 
   /**
    * Batch fetch multiple posts by IDs
@@ -106,7 +97,7 @@ export class BatchService {
    */
   async batchGetUsers(
     userIds: string[],
-    requesterId?: string
+    _requesterId?: string
   ): Promise<Record<string, any>> {
     if (userIds.length === 0) {
       return {};

@@ -157,7 +157,7 @@ export const batchGetComments = asyncHandler(
  * - POST /api/batch/comments
  */
 async function executeSingleBatchRequest(
-  originalReq: Request,
+  _originalReq: Request,
   batchReq: {
     method: string;
     path: string;

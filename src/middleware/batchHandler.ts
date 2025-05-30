@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from './errorHandler';
-import { authenticate } from './auth';
 import { z } from 'zod';
 
 /**
@@ -64,50 +63,12 @@ export function validateBatchRequest(
  * Execute a single batch request
  */
 async function executeBatchRequest(
-  req: Request,
+  _req: Request,
   method: string,
   path: string,
-  body?: any,
-  customHeaders?: Record<string, string>
+  _body?: any,
+  _customHeaders?: Record<string, string>
 ): Promise<{ status: number; headers: Record<string, string>; body: any }> {
-  // Create a mock request object for the batch request
-  const mockReq = {
-    ...req,
-    method: method.toUpperCase(),
-    path,
-    url: path,
-    originalUrl: path,
-    body: body || {},
-    headers: {
-      ...req.headers,
-      ...customHeaders,
-    },
-    query: {},
-    params: {},
-  } as any;
-
-  // Create a mock response object to capture the response
-  const mockRes = {
-    statusCode: 200,
-    headers: {} as Record<string, string>,
-    body: null as any,
-    status: function (code: number) {
-      this.statusCode = code;
-      return this;
-    },
-    json: function (data: any) {
-      this.body = data;
-      return this;
-    },
-    send: function (data: any) {
-      this.body = data;
-      return this;
-    },
-    setHeader: function (name: string, value: string) {
-      this.headers[name] = value;
-    },
-  } as any;
-
   // Note: This is a simplified implementation
   // In a real scenario, you'd need to properly route the request through your Express app
   // For now, we'll return an error indicating this needs to be implemented per-route
@@ -159,7 +120,7 @@ export async function processBatchRequests(
   );
 
   // Format responses
-  const responses = results.map((result, index) => {
+  const responses = results.map((result) => {
     if (result.status === 'fulfilled') {
       return {
         status: result.value.status,

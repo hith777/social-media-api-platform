@@ -3,7 +3,6 @@ import { AppError } from '../../middleware/errorHandler';
 import { cache } from '../../config/redis';
 import {
   calculateSkip,
-  calculateTotalPages,
   createPaginationResult,
   normalizePagination,
   type PaginationResult,
@@ -406,14 +405,9 @@ export class ContentService {
     page: number = 1,
     limit: number = 10,
     userId?: string
-  ): Promise<{
-    posts: any[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
-    const skip = (page - 1) * limit;
+  ): Promise<PaginationResult<any> & { posts: any[] }> {
+    const { page: normalizedPage, limit: normalizedLimit } = normalizePagination(page, limit);
+    const skip = calculateSkip(normalizedPage, normalizedLimit);
 
     const where: any = {
       isDeleted: false as any,
@@ -528,22 +522,26 @@ export class ContentService {
         },
         orderBy,
         skip,
-        take: limit,
+        take: normalizedLimit,
       }),
       prisma.post.count({ where }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const postsWithLikes = posts.map((post) => ({
+      ...post,
+      isLiked: (post as any).likes && (post as any).likes.length > 0,
+    }));
+
+    const paginationResult = createPaginationResult(
+      postsWithLikes,
+      total,
+      normalizedPage,
+      normalizedLimit
+    );
 
     return {
-      posts: posts.map((post) => ({
-        ...post,
-        isLiked: (post as any).likes && (post as any).likes.length > 0,
-      })),
-      total,
-      page,
-      limit,
-      totalPages,
+      ...paginationResult,
+      posts: paginationResult.data,
     };
   }
 
@@ -815,13 +813,7 @@ export class ContentService {
     page: number = 1,
     limit: number = 20,
     repliesLimit: number = 10
-  ): Promise<{
-    comments: any[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  }> {
+  ): Promise<PaginationResult<any> & { comments: any[] }> {
     // Verify post exists
     const post = await prisma.post.findFirst({
       where: {
@@ -947,12 +939,17 @@ export class ContentService {
       };
     });
 
-    return createPaginationResult(
+    const paginationResult = createPaginationResult(
       commentsWithReplies,
       total,
       normalizedPage,
       normalizedLimit
     );
+    
+    return {
+      ...paginationResult,
+      comments: paginationResult.data,
+    };
   }
 
   /**

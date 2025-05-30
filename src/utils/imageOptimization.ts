@@ -1,5 +1,4 @@
 import sharp from 'sharp';
-import path from 'path';
 import fs from 'fs';
 
 export interface ImageOptimizationOptions {
@@ -34,6 +33,7 @@ export async function optimizeImage(
 ): Promise<string> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const finalOutputPath = outputPath || inputPath;
+  const isSameFile = inputPath === finalOutputPath;
 
   try {
     // Get image metadata
@@ -71,8 +71,16 @@ export async function optimizeImage(
         break;
     }
 
-    // Save optimized image
-    await pipeline.toFile(finalOutputPath);
+    // If same file, write to temp file first, then replace
+    if (isSameFile) {
+      const tempPath = `${finalOutputPath}.tmp`;
+      await pipeline.toFile(tempPath);
+      // Replace original with optimized version
+      await fs.promises.rename(tempPath, finalOutputPath);
+    } else {
+      // Save optimized image to different path
+      await pipeline.toFile(finalOutputPath);
+    }
 
     return finalOutputPath;
   } catch (error) {
