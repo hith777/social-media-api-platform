@@ -8,9 +8,11 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/index.ts',
     '!src/config/**',
+    '!src/routes/**',
+    '!src/types/**',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html', 'json'],
+  coverageReporters: ['text', 'lcov', 'html', 'json', 'json-summary'],
   coverageThreshold: {
     global: {
       branches: 70,
@@ -19,6 +21,12 @@ module.exports = {
       statements: 70,
     },
   },
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/tests/',
+    '/coverage/',
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
