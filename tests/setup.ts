@@ -19,4 +19,12 @@ process.env.RATE_LIMIT_MAX_REQUESTS = '100';
 // Increase timeout for tests that might need to connect to services
 jest.setTimeout(10000);
 
+// Global test database cleanup
+import { teardownTestDatabase } from './helpers/database';
+
+afterAll(async () => {
+  // Cleanup after all tests complete
+  await teardownTestDatabase();
+});
+
 
