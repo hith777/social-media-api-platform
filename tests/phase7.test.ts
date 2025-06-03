@@ -112,6 +112,9 @@ describe('Phase 7: Performance & Optimization', () => {
         password: 'Test123!@#',
       });
 
+    if (!login1.body.data || !login1.body.data.accessToken) {
+      throw new Error(`Login failed for user1: ${JSON.stringify(login1.body)}`);
+    }
     accessToken1 = login1.body.data.accessToken;
 
     // Create test posts

@@ -93,18 +93,27 @@ describe('Phase 4: Content Service - Comments', () => {
       identifier: 'testuser1@example.com',
       password: 'Test123!@#',
     });
+    if (!login1.body.data || !login1.body.data.accessToken) {
+      throw new Error(`Login failed for user1: ${JSON.stringify(login1.body)}`);
+    }
     accessToken1 = login1.body.data.accessToken;
 
     const login2 = await request(app).post('/api/users/login').send({
       identifier: 'testuser2@example.com',
       password: 'Test123!@#',
     });
+    if (!login2.body.data || !login2.body.data.accessToken) {
+      throw new Error(`Login failed for user2: ${JSON.stringify(login2.body)}`);
+    }
     accessToken2 = login2.body.data.accessToken;
 
     const login3 = await request(app).post('/api/users/login').send({
       identifier: 'testuser3@example.com',
       password: 'Test123!@#',
     });
+    if (!login3.body.data || !login3.body.data.accessToken) {
+      throw new Error(`Login failed for user3: ${JSON.stringify(login3.body)}`);
+    }
     accessToken3 = login3.body.data.accessToken;
 
     // Create test posts

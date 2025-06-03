@@ -1,7 +1,5 @@
 import request from 'supertest';
 import app from '../../src/index';
-import prisma from '../../src/config/database';
-import { hashPassword } from '../../src/utils/password';
 import {
   createTestUser,
   createTestPost,

@@ -72,11 +72,13 @@ app.use(errorHandler);
 const io = initializeWebSocket(httpServer);
 (global as any).io = io; // Make io available globally for notification emission
 
-// Start server
-httpServer.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT} in ${env.NODE_ENV} mode`);
-  logger.info(`WebSocket server initialized on /socket.io`);
-});
+// Start server only if not in test mode
+if (env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT} in ${env.NODE_ENV} mode`);
+    logger.info(`WebSocket server initialized on /socket.io`);
+  });
+}
 
 export default app;
 

@@ -1,6 +1,5 @@
 import { ContentService } from '../../src/services/content/contentService';
 import prisma from '../../src/config/database';
-import { AppError } from '../../src/middleware/errorHandler';
 import { hashPassword } from '../../src/utils/password';
 
 describe('Post Service Unit Tests', () => {
@@ -188,7 +187,7 @@ describe('Post Service Unit Tests', () => {
 
       await expect(
         contentService.updatePost(testPost.id, otherUser.id, { content: 'Test' })
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('You can only update your own posts');
 
       await prisma.user.delete({ where: { id: otherUser.id } });
     });
@@ -228,7 +227,7 @@ describe('Post Service Unit Tests', () => {
 
       await expect(
         contentService.deletePost(testPost.id, otherUser.id)
-      ).rejects.toThrow('Unauthorized');
+      ).rejects.toThrow('You can only delete your own posts');
 
       await prisma.user.delete({ where: { id: otherUser.id } });
     });

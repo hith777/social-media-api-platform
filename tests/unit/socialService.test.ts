@@ -1,7 +1,5 @@
 import { SocialService } from '../../src/services/social/socialService';
 import prisma from '../../src/config/database';
-import { AppError } from '../../src/middleware/errorHandler';
-import { hashPassword } from '../../src/utils/password';
 import {
   createTestUser,
   createTestPost,

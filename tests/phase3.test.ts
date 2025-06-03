@@ -62,12 +62,18 @@ describe('Phase 3: Content Service - Posts', () => {
       identifier: 'testuser1@example.com',
       password: 'Test123!@#',
     });
+    if (!login1.body.data || !login1.body.data.accessToken) {
+      throw new Error(`Login failed for user1: ${JSON.stringify(login1.body)}`);
+    }
     accessToken1 = login1.body.data.accessToken;
 
     const login2 = await request(app).post('/api/users/login').send({
       identifier: 'testuser2@example.com',
       password: 'Test123!@#',
     });
+    if (!login2.body.data || !login2.body.data.accessToken) {
+      throw new Error(`Login failed for user2: ${JSON.stringify(login2.body)}`);
+    }
     accessToken2 = login2.body.data.accessToken;
   });
 

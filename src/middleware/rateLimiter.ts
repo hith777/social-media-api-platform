@@ -12,6 +12,7 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skip: () => env.NODE_ENV === 'test', // Skip rate limiting in test mode
   handler: (req, res) => {
     logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
     res.status(429).json({
@@ -30,6 +31,7 @@ export const authLimiter = rateLimit({
     message: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true, // Don't count successful requests
+  skip: () => env.NODE_ENV === 'test', // Skip rate limiting in test mode
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
@@ -49,6 +51,7 @@ export const uploadLimiter = rateLimit({
     success: false,
     message: 'Too many file uploads, please try again later.',
   },
+  skip: () => env.NODE_ENV === 'test', // Skip rate limiting in test mode
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {

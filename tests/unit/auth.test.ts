@@ -7,6 +7,7 @@ import {
   decodeToken,
   TokenPayload,
 } from '../../src/utils/jwt';
+import jwt from 'jsonwebtoken';
 import { UserService } from '../../src/services/user/userService';
 import prisma from '../../src/config/database';
 import { AppError } from '../../src/middleware/errorHandler';
@@ -147,20 +148,20 @@ describe('Authentication Unit Tests', () => {
         }).toThrow('Invalid or expired access token');
       });
 
-      it('should throw error for expired token', () => {
+      it('should throw error for expired token', async () => {
         // Generate token with very short expiry (1ms)
-        const shortToken = require('jsonwebtoken').sign(
+        const shortToken = jwt.sign(
           payload,
-          process.env.JWT_SECRET,
+          process.env.JWT_SECRET as string,
           { expiresIn: '1ms' }
         );
         
-        // Wait a bit for token to expire
-        setTimeout(() => {
-          expect(() => {
-            verifyAccessToken(shortToken);
-          }).toThrow('Invalid or expired access token');
-        }, 10);
+        // Wait for token to expire
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        
+        expect(() => {
+          verifyAccessToken(shortToken);
+        }).toThrow('Invalid or expired access token');
       });
     });
 
