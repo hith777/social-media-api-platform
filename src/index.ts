@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import cors from 'cors';
 import { env } from './config/env';
 import logger from './config/logger';
-import { errorHandler } from './middleware/errorHandler';
+import { errorHandler, AppError } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
 import { compressionMiddleware } from './middleware/compression';
@@ -64,6 +64,11 @@ app.use('/api/social', socialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/batch', batchRoutes);
+
+// 404 handler for unmatched routes (must be before error handler)
+app.use((req, _res, next) => {
+  next(new AppError(`Route ${req.method} ${req.path} not found`, 404));
+});
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

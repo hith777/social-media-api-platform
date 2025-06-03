@@ -105,6 +105,21 @@ describe('Phase 6: Search & Discovery', () => {
       },
     });
 
+    // Verify users exist before login
+    const user1Check = await prisma.user.findUnique({
+      where: { email: 'testuser1@example.com' },
+    });
+    const user2Check = await prisma.user.findUnique({
+      where: { email: 'testuser2@example.com' },
+    });
+    
+    if (!user1Check) {
+      throw new Error('testuser1 was not created');
+    }
+    if (!user2Check) {
+      throw new Error('testuser2 was not created');
+    }
+
     // Login users
     const login1 = await request(app).post('/api/users/login').send({
       identifier: 'testuser1@example.com',
@@ -120,7 +135,7 @@ describe('Phase 6: Search & Discovery', () => {
       password: 'Test123!@#',
     });
     if (!login2.body.data || !login2.body.data.accessToken) {
-      throw new Error(`Login failed for user2: ${JSON.stringify(login2.body)}`);
+      throw new Error(`Login failed for user2: ${JSON.stringify(login2.body)}. User exists: ${!!user2Check}, isActive: ${user2Check.isActive}, isEmailVerified: ${user2Check.isEmailVerified}`);
     }
     accessToken2 = login2.body.data.accessToken;
 

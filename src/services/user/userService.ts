@@ -192,8 +192,7 @@ export class UserService {
     const refreshToken = generateRefreshToken(tokenPayload);
 
     // Update user with refresh token and last login
-    // If update fails (e.g., user was deleted), log warning but allow login to proceed
-    // since password was already verified
+    // Retry once if update fails (e.g., user was deleted between find and update)
     try {
       await prisma.user.update({
         where: { id: user.id },
@@ -203,11 +202,31 @@ export class UserService {
         },
       });
     } catch (error: any) {
-      // If user was deleted between find and update, log warning but continue
-      // This can happen in rare race conditions or test cleanup
+      // If user was deleted between find and update, try to re-fetch and update
       if (error.code === 'P2025') {
-        logger.warn(`User ${user.id} not found during login update, proceeding without update`);
-        // Don't throw error - login should succeed since password was verified
+        logger.warn(`User ${user.id} not found during login update, attempting to re-fetch`);
+        // Re-fetch user to ensure it still exists
+        const updatedUser = await prisma.user.findUnique({
+          where: { id: user.id },
+        });
+        if (updatedUser) {
+          // User still exists, try update again
+          try {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                refreshToken: refreshToken as string | null,
+                lastLoginAt: new Date(),
+              },
+            });
+          } catch (retryError: any) {
+            logger.warn(`Failed to update user on retry: ${retryError.message}`);
+            // Still allow login to proceed since password was verified
+          }
+        } else {
+          logger.warn(`User ${user.id} no longer exists, proceeding without update`);
+          // Don't throw error - login should succeed since password was verified
+        }
       } else {
         // For other errors, log but still allow login
         logger.warn(`Failed to update user during login: ${error.message}`);

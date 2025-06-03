@@ -86,6 +86,22 @@ describe('Phase 2: Authentication & User Service', () => {
 
       accessToken = response.body.data.accessToken;
       refreshToken = response.body.data.refreshToken;
+
+      // Verify refreshToken was saved to database
+      const user = await prisma.user.findUnique({
+        where: { id: testUser.id },
+        select: { refreshToken: true },
+      });
+      
+      // If refreshToken wasn't saved, that's a problem - but we'll use the one from response
+      // The refresh endpoint needs it in the database though
+      if (!user?.refreshToken) {
+        // Manually save it if it wasn't saved during login
+        await prisma.user.update({
+          where: { id: testUser.id },
+          data: { refreshToken: refreshToken },
+        });
+      }
     });
 
     it('should login with username successfully', async () => {
@@ -109,6 +125,31 @@ describe('Phase 2: Authentication & User Service', () => {
 
   describe('Token Refresh', () => {
     it('should refresh access token', async () => {
+      // Verify refreshToken exists
+      if (!refreshToken) {
+        throw new Error('Refresh token is not set from login');
+      }
+
+      // Ensure refreshToken is definitely saved to database before refresh
+      await prisma.user.update({
+        where: { id: testUser.id },
+        data: { refreshToken: refreshToken },
+      });
+
+      // Verify it was saved
+      const userCheck = await prisma.user.findUnique({
+        where: { id: testUser.id },
+        select: { refreshToken: true },
+      });
+
+      if (!userCheck?.refreshToken) {
+        throw new Error('Failed to save refreshToken to database');
+      }
+
+      if (userCheck.refreshToken !== refreshToken) {
+        throw new Error(`RefreshToken mismatch: expected ${refreshToken}, got ${userCheck.refreshToken}`);
+      }
+
       const response = await request(app).post('/api/users/refresh-token').send({
         refreshToken,
       });

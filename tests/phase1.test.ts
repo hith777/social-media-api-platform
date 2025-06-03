@@ -67,7 +67,8 @@ describe('Phase 1: Project Setup & Foundation', () => {
     });
 
     it('should have content routes registered', async () => {
-      const response = await request(app).get('/api/content');
+      // Content routes are under /api/posts, not /api/content
+      const response = await request(app).get('/api/posts');
       expect([200, 401, 404, 405]).toContain(response.status);
     });
 

@@ -176,6 +176,11 @@ describe('Post Service Unit Tests', () => {
     });
 
     it('should throw error when updating another user\'s post', async () => {
+      // Create a fresh post for this test to avoid issues with testPost being modified
+      const testPostForUpdate = await contentService.createPost(testUser.id, {
+        content: 'Post for update test',
+      });
+
       const otherUser = await prisma.user.create({
         data: {
           email: 'otheruser@example.com',
@@ -186,15 +191,25 @@ describe('Post Service Unit Tests', () => {
       });
 
       await expect(
-        contentService.updatePost(testPost.id, otherUser.id, { content: 'Test' })
+        contentService.updatePost(testPostForUpdate.id, otherUser.id, { content: 'Test' })
       ).rejects.toThrow('You can only update your own posts');
 
+      // Cleanup
+      await prisma.post.delete({ where: { id: testPostForUpdate.id } });
       await prisma.user.delete({ where: { id: otherUser.id } });
     });
   });
 
   describe('deletePost', () => {
     it('should soft delete a post', async () => {
+      // Ensure testUser still exists
+      const user = await prisma.user.findUnique({
+        where: { id: testUser.id },
+      });
+      if (!user) {
+        throw new Error(`Test user ${testUser.id} does not exist`);
+      }
+
       const postToDelete = await contentService.createPost(testUser.id, {
         content: 'Post to be deleted',
       });
@@ -216,6 +231,11 @@ describe('Post Service Unit Tests', () => {
     });
 
     it('should throw error when deleting another user\'s post', async () => {
+      // Create a fresh post for this test to avoid issues with testPost being modified
+      const testPostForDelete = await contentService.createPost(testUser.id, {
+        content: 'Post for delete test',
+      });
+
       const otherUser = await prisma.user.create({
         data: {
           email: 'otheruser2@example.com',
@@ -226,9 +246,11 @@ describe('Post Service Unit Tests', () => {
       });
 
       await expect(
-        contentService.deletePost(testPost.id, otherUser.id)
+        contentService.deletePost(testPostForDelete.id, otherUser.id)
       ).rejects.toThrow('You can only delete your own posts');
 
+      // Cleanup
+      await prisma.post.delete({ where: { id: testPostForDelete.id } });
       await prisma.user.delete({ where: { id: otherUser.id } });
     });
   });
