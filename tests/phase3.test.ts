@@ -236,7 +236,8 @@ describe('Phase 3: Content Service - Posts', () => {
         .set('Authorization', `Bearer ${accessToken1}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.posts).toBeDefined();
+      expect(response.body.data.data).toBeDefined(); // PaginationResult uses 'data' not 'posts'
+      expect(Array.isArray(response.body.data.data)).toBe(true);
       expect(response.body.data.total).toBeDefined();
       expect(response.body.data.page).toBe(1);
       expect(response.body.data.limit).toBe(10);
