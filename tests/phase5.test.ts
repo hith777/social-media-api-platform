@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/index';
 import prisma from '../src/config/database';
 import { hashPassword } from '../src/utils/password';
+import { cache } from '../src/config/redis';
 
 describe('Phase 5: Social Service - Interactions', () => {
   let testUser1: any;
@@ -429,19 +430,58 @@ describe('Phase 5: Social Service - Interactions', () => {
     });
 
     it('should show correct like count after multiple likes', async () => {
-      // Add another like
-      await prisma.like.create({
-        data: {
+      // Ensure testUser2's like exists (from beforeAll)
+      await prisma.like.upsert({
+        where: {
+          userId_postId: {
+            userId: testUser2.id,
+            postId: testPost1.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: testUser2.id,
+          postId: testPost1.id,
+        },
+      });
+
+      // Add another like for testUser3
+      await prisma.like.upsert({
+        where: {
+          userId_postId: {
+            userId: testUser3.id,
+            postId: testPost1.id,
+          },
+        },
+        update: {},
+        create: {
           userId: testUser3.id,
           postId: testPost1.id,
         },
       });
 
+      // Verify likes exist in database
+      const likes = await prisma.like.findMany({
+        where: { postId: testPost1.id },
+        select: { userId: true },
+      });
+
+      // Verify we have at least 2 likes in the database
+      expect(likes.length).toBeGreaterThanOrEqual(2);
+
+      // Clear cache for this post to ensure we get fresh data
+      await cache.delPattern(`post:${testPost1.id}:*`);
+
+      // Now check the API response
       const response = await request(app)
         .get(`/api/posts/${testPost1.id}`)
         .set('Authorization', `Bearer ${accessToken1}`);
 
       expect(response.status).toBe(200);
+      
+      // Verify the count matches what's in the database
+      expect(response.body.data._count.likes).toBe(likes.length);
+      // Should have at least 2 likes (testUser2 + testUser3)
       expect(response.body.data._count.likes).toBeGreaterThanOrEqual(2);
     });
   });
