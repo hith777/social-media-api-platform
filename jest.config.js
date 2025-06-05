@@ -32,7 +32,7 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 10000,
-  maxWorkers: '50%',
+  maxWorkers: process.env.CI ? '50%' : 1, // Run sequentially in local dev to avoid test interference
   verbose: true,
 };
 

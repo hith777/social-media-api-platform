@@ -2,6 +2,7 @@ import request from 'supertest';
 import app from '../src/index';
 import prisma from '../src/config/database';
 import { hashPassword } from '../src/utils/password';
+import { cache } from '../src/config/redis';
 
 describe('Phase 6: Search & Discovery', () => {
   let testUser1: any;
@@ -221,6 +222,20 @@ describe('Phase 6: Search & Discovery', () => {
 
   describe('POST /api/search/posts - Full-text search for posts', () => {
     it('should search posts by content', async () => {
+      // Clear search cache to ensure fresh results
+      await cache.delPattern('search:posts:*');
+
+      // Verify the post exists and has the expected content
+      const post = await prisma.post.findUnique({
+        where: { id: testPost1.id },
+        select: { content: true, visibility: true, isDeleted: true },
+      });
+      
+      expect(post).toBeDefined();
+      expect(post?.content).toContain('JavaScript');
+      expect(post?.visibility).toBe('public');
+      expect(post?.isDeleted).toBe(false);
+
       const response = await request(app)
         .get('/api/search/posts')
         .query({ q: 'JavaScript' })

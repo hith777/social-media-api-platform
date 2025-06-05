@@ -175,9 +175,10 @@ describe('E2E Critical Flows', () => {
       expect(userSearchResponse.status).toBe(200);
       expect(userSearchResponse.body.data).toBeInstanceOf(Array);
 
-      // Search for posts
+      // Search for posts (use 'q' parameter, not 'query')
       const postSearchResponse = await request(app)
-        .get('/api/search/posts?query=test&page=1&limit=10')
+        .get('/api/search/posts')
+        .query({ q: 'test', page: 1, limit: 10 })
         .set('Authorization', `Bearer ${accessToken1}`);
 
       expect(postSearchResponse.status).toBe(200);
