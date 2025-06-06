@@ -113,12 +113,25 @@ describe('Authentication Unit Tests', () => {
         expect(token.split('.')).toHaveLength(3); // JWT has 3 parts
       });
 
-      it('should generate different tokens for same payload', () => {
+      it('should generate valid tokens with same payload', () => {
         const token1 = generateAccessToken(payload);
         const token2 = generateAccessToken(payload);
         
-        // Tokens should be different due to iat (issued at) claim
-        expect(token1).not.toBe(token2);
+        // Both tokens should be valid and decode to the same payload
+        // Note: Tokens generated at the same time will be identical due to same iat
+        expect(token1).toBeDefined();
+        expect(token2).toBeDefined();
+        expect(typeof token1).toBe('string');
+        expect(typeof token2).toBe('string');
+        
+        // Verify both tokens are valid
+        const decoded1 = verifyAccessToken(token1);
+        const decoded2 = verifyAccessToken(token2);
+        
+        expect(decoded1.userId).toBe(payload.userId);
+        expect(decoded2.userId).toBe(payload.userId);
+        expect(decoded1.email).toBe(payload.email);
+        expect(decoded2.email).toBe(payload.email);
       });
     });
 

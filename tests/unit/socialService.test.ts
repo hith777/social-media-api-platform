@@ -86,6 +86,14 @@ describe('Social Service Unit Tests', () => {
     });
 
     it('should throw error when user is blocked', async () => {
+      // First, ensure user1 is not following user2 (unfollow if needed)
+      await prisma.follow.deleteMany({
+        where: {
+          followerId: user1.id,
+          followingId: user2.id,
+        },
+      });
+
       // Block user2
       await prisma.block.create({
         data: {
@@ -135,7 +143,17 @@ describe('Social Service Unit Tests', () => {
 
   describe('getFollowers', () => {
     it('should get user followers', async () => {
-      // user1 follows user2
+      // Ensure no blocks exist between user1 and user2
+      await prisma.block.deleteMany({
+        where: {
+          OR: [
+            { blockerId: user1.id, blockedId: user2.id },
+            { blockerId: user2.id, blockedId: user1.id },
+          ],
+        },
+      });
+
+      // user2 follows user1 (so user1 has user2 as a follower)
       await socialService.followUser(user2.id, user1.id);
 
       const result = await socialService.getFollowers(user1.id, 1, 10);
@@ -177,7 +195,8 @@ describe('Social Service Unit Tests', () => {
 
   describe('likePost', () => {
     it('should like a post', async () => {
-      await socialService.likePost(user1.id, post2.id);
+      // Method signature: likePost(postId, userId)
+      await socialService.likePost(post2.id, user1.id);
 
       const like = await prisma.like.findFirst({
         where: {
@@ -193,24 +212,24 @@ describe('Social Service Unit Tests', () => {
 
     it('should throw error for duplicate like', async () => {
       await expect(
-        socialService.likePost(user1.id, post2.id)
+        socialService.likePost(post2.id, user1.id)
       ).rejects.toThrow('Post already liked');
     });
 
     it('should throw error for non-existent post', async () => {
       await expect(
-        socialService.likePost(user1.id, 'non-existent-id')
+        socialService.likePost('non-existent-id', user1.id)
       ).rejects.toThrow('Post not found');
     });
   });
 
   describe('unlikePost', () => {
     it('should unlike a post', async () => {
-      // First like
-      await socialService.likePost(user2.id, post1.id);
+      // First like (method signature: likePost(postId, userId))
+      await socialService.likePost(post1.id, user2.id);
 
-      // Then unlike
-      await socialService.unlikePost(user2.id, post1.id);
+      // Then unlike (method signature: unlikePost(postId, userId))
+      await socialService.unlikePost(post1.id, user2.id);
 
       const like = await prisma.like.findFirst({
         where: {
@@ -224,14 +243,23 @@ describe('Social Service Unit Tests', () => {
 
     it('should throw error when not liked', async () => {
       await expect(
-        socialService.unlikePost(user2.id, post1.id)
+        socialService.unlikePost(post1.id, user2.id)
       ).rejects.toThrow('Post not liked');
     });
   });
 
   describe('togglePostLike', () => {
     it('should like a post if not liked', async () => {
-      const result = await socialService.togglePostLike(user3.id, post1.id);
+      // Method signature: togglePostLike(postId, userId)
+      // Ensure post1 is not liked by user3 first
+      await prisma.like.deleteMany({
+        where: {
+          userId: user3.id,
+          postId: post1.id,
+        },
+      });
+
+      const result = await socialService.togglePostLike(post1.id, user3.id);
 
       expect(result.liked).toBe(true);
 
@@ -247,7 +275,7 @@ describe('Social Service Unit Tests', () => {
 
     it('should unlike a post if already liked', async () => {
       // Post is already liked from previous test
-      const result = await socialService.togglePostLike(user3.id, post1.id);
+      const result = await socialService.togglePostLike(post1.id, user3.id);
 
       expect(result.liked).toBe(false);
 
