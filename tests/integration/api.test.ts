@@ -10,12 +10,66 @@ describe('API Integration Tests', () => {
   let testPost: any;
 
   beforeAll(async () => {
-    // Clean up existing test data
-    await prisma.user.deleteMany({
+    // Clean up existing test data (get user IDs first)
+    const existingUsers = await prisma.user.findMany({
       where: {
         email: { in: ['apitest@example.com', 'apitest2@example.com'] },
       },
+      select: { id: true },
     });
+    const userIds = existingUsers.map(u => u.id);
+
+    if (userIds.length > 0) {
+      // Delete related data first (order matters for foreign key constraints)
+      await prisma.comment.deleteMany({
+        where: {
+          OR: [
+            { authorId: { in: userIds } },
+            { post: { authorId: { in: userIds } } },
+          ],
+        },
+      });
+
+      await prisma.like.deleteMany({
+        where: {
+          OR: [
+            { userId: { in: userIds } },
+            { post: { authorId: { in: userIds } } },
+            { comment: { authorId: { in: userIds } } },
+          ],
+        },
+      });
+
+      await prisma.follow.deleteMany({
+        where: {
+          OR: [
+            { followerId: { in: userIds } },
+            { followingId: { in: userIds } },
+          ],
+        },
+      });
+
+      await prisma.block.deleteMany({
+        where: {
+          OR: [
+            { blockerId: { in: userIds } },
+            { blockedId: { in: userIds } },
+          ],
+        },
+      });
+
+      await prisma.notification.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+
+      await prisma.post.deleteMany({
+        where: { authorId: { in: userIds } },
+      });
+
+      await prisma.user.deleteMany({
+        where: { id: { in: userIds } },
+      });
+    }
 
     // Create test user
     const hashedPassword = await hashPassword('Test123!@#');
@@ -32,17 +86,66 @@ describe('API Integration Tests', () => {
   });
 
   afterAll(async () => {
-    // Cleanup
-    if (testPost) {
-      await prisma.post.deleteMany({
-        where: { authorId: testUser.id },
-      });
-    }
-    await prisma.user.deleteMany({
+    // Get user IDs for cleanup
+    const usersToDelete = await prisma.user.findMany({
       where: {
         email: { in: ['apitest@example.com', 'apitest2@example.com'] },
       },
+      select: { id: true },
     });
+    const userIds = usersToDelete.map(u => u.id);
+
+    if (userIds.length > 0) {
+      // Delete related data first (order matters for foreign key constraints)
+      await prisma.comment.deleteMany({
+        where: {
+          OR: [
+            { authorId: { in: userIds } },
+            { post: { authorId: { in: userIds } } },
+          ],
+        },
+      });
+
+      await prisma.like.deleteMany({
+        where: {
+          OR: [
+            { userId: { in: userIds } },
+            { post: { authorId: { in: userIds } } },
+            { comment: { authorId: { in: userIds } } },
+          ],
+        },
+      });
+
+      await prisma.follow.deleteMany({
+        where: {
+          OR: [
+            { followerId: { in: userIds } },
+            { followingId: { in: userIds } },
+          ],
+        },
+      });
+
+      await prisma.block.deleteMany({
+        where: {
+          OR: [
+            { blockerId: { in: userIds } },
+            { blockedId: { in: userIds } },
+          ],
+        },
+      });
+
+      await prisma.notification.deleteMany({
+        where: { userId: { in: userIds } },
+      });
+
+      await prisma.post.deleteMany({
+        where: { authorId: { in: userIds } },
+      });
+
+      await prisma.user.deleteMany({
+        where: { id: { in: userIds } },
+      });
+    }
   });
 
   describe('Authentication Endpoints', () => {
@@ -398,9 +501,62 @@ describe('API Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await prisma.user.deleteMany({
+      const userToDelete = await prisma.user.findUnique({
         where: { email: 'otheruser@example.com' },
+        select: { id: true },
       });
+
+      if (userToDelete) {
+        // Delete related data first (order matters for foreign key constraints)
+        await prisma.comment.deleteMany({
+          where: {
+            OR: [
+              { authorId: userToDelete.id },
+              { post: { authorId: userToDelete.id } },
+            ],
+          },
+        });
+
+        await prisma.like.deleteMany({
+          where: {
+            OR: [
+              { userId: userToDelete.id },
+              { post: { authorId: userToDelete.id } },
+              { comment: { authorId: userToDelete.id } },
+            ],
+          },
+        });
+
+        await prisma.follow.deleteMany({
+          where: {
+            OR: [
+              { followerId: userToDelete.id },
+              { followingId: userToDelete.id },
+            ],
+          },
+        });
+
+        await prisma.block.deleteMany({
+          where: {
+            OR: [
+              { blockerId: userToDelete.id },
+              { blockedId: userToDelete.id },
+            ],
+          },
+        });
+
+        await prisma.notification.deleteMany({
+          where: { userId: userToDelete.id },
+        });
+
+        await prisma.post.deleteMany({
+          where: { authorId: userToDelete.id },
+        });
+
+        await prisma.user.deleteMany({
+          where: { id: userToDelete.id },
+        });
+      }
     });
 
     describe('POST /api/social/follow/:userId', () => {
