@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import logger from '../config/logger';
+import { captureException } from '../config/sentry';
 
 export class AppError extends Error {
   statusCode: number;
@@ -108,6 +109,17 @@ export const errorHandler = (
   }
 
   // Handle unexpected errors
+  // Capture server errors (5xx) to Sentry
+  if (statusCode >= 500) {
+    captureException(err as Error, {
+      request: {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+      },
+    });
+  }
+
   const message =
     process.env.NODE_ENV === 'production'
       ? 'Internal server error'

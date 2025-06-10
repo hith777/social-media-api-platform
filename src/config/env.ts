@@ -27,6 +27,8 @@ const envSchema = z.object({
   DATABASE_POOL_SIZE: z.string().transform(Number).optional(),
   DATABASE_CONNECTION_TIMEOUT: z.string().transform(Number).optional(),
   DATABASE_QUERY_TIMEOUT: z.string().transform(Number).optional(),
+  // Sentry error tracking
+  SENTRY_DSN: z.string().url().optional(),
 });
 
 // Validate and parse environment variables

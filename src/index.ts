@@ -8,6 +8,7 @@ import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
 import { compressionMiddleware } from './middleware/compression';
 import { initializeWebSocket } from './config/websocket';
+import { initializeSentry, sentryRequestHandler, sentryErrorHandler } from './config/sentry';
 import healthRouter from './routes/health';
 import docsRouter from './routes/docs';
 import userRoutes from './routes/userRoutes';
@@ -69,6 +70,9 @@ app.use('/api/batch', batchRoutes);
 app.use((req, _res, next) => {
   next(new AppError(`Route ${req.method} ${req.path} not found`, 404));
 });
+
+// Sentry error handler (must be before custom error handler)
+app.use(sentryErrorHandler);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
