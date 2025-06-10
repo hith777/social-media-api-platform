@@ -46,19 +46,35 @@ const swaggerOptions: swaggerJsdoc.Options = {
       },
       {
         name: 'Users',
-        description: 'User management and authentication',
+        description: 'User management, authentication, and profile operations',
       },
       {
         name: 'Content',
         description: 'Posts and comments management',
       },
       {
+        name: 'Comments',
+        description: 'Comment operations and replies',
+      },
+      {
         name: 'Social',
-        description: 'Social interactions (likes, follows)',
+        description: 'Social interactions (likes, follows, blocks)',
+      },
+      {
+        name: 'Notifications',
+        description: 'User notifications management',
+      },
+      {
+        name: 'Search',
+        description: 'Search and discovery features',
+      },
+      {
+        name: 'Batch',
+        description: 'Batch request operations',
       },
     ],
   },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts', './src/routes/swagger-docs.ts'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
