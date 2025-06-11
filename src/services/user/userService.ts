@@ -24,7 +24,15 @@ export class UserService {
   }
 
   /**
-   * Create a new user
+   * Create a new user account
+   * @param data - User registration data
+   * @param data.email - User email address (must be unique)
+   * @param data.username - Username (must be unique)
+   * @param data.password - Password (must meet strength requirements)
+   * @param data.firstName - Optional first name
+   * @param data.lastName - Optional last name
+   * @returns Created user object (without password)
+   * @throws {AppError} If email/username already exists or password is weak
    */
   async createUser(data: {
     email: string;
@@ -101,7 +109,9 @@ export class UserService {
   }
 
   /**
-   * Find user by email
+   * Find a user by their email address
+   * @param email - Email address to search for
+   * @returns User object if found, null otherwise
    */
   async findByEmail(email: string): Promise<User | null> {
     return prisma.user.findUnique({
@@ -110,7 +120,9 @@ export class UserService {
   }
 
   /**
-   * Find user by username
+   * Find a user by their username
+   * @param username - Username to search for
+   * @returns User object if found, null otherwise
    */
   async findByUsername(username: string): Promise<User | null> {
     return prisma.user.findUnique({
@@ -119,7 +131,9 @@ export class UserService {
   }
 
   /**
-   * Find user by ID
+   * Find a user by their ID
+   * @param id - User ID
+   * @returns User object if found, null otherwise (excludes password)
    */
   async findById(id: string): Promise<any> {
     return prisma.user.findUnique({
@@ -143,7 +157,11 @@ export class UserService {
   }
 
   /**
-   * Login user with email/username and password
+   * Authenticate user and generate tokens
+   * @param identifier - Email address or username
+   * @param password - User password
+   * @returns Object containing access token, refresh token, and user data
+   * @throws {AppError} If credentials are invalid or user is inactive
    */
   async login(
     identifier: string,

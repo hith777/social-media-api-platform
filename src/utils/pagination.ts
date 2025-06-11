@@ -30,21 +30,35 @@ export interface CursorPaginationResult<T> {
 }
 
 /**
- * Calculate pagination skip value
+ * Calculate the number of records to skip for pagination
+ * @param page - Current page number (1-indexed)
+ * @param limit - Number of items per page
+ * @returns Number of items to skip
+ * @example calculateSkip(2, 10) returns 10
  */
 export function calculateSkip(page: number, limit: number): number {
   return (page - 1) * limit;
 }
 
 /**
- * Calculate total pages
+ * Calculate the total number of pages based on total items and items per page
+ * @param total - Total number of items
+ * @param limit - Number of items per page
+ * @returns Total number of pages (rounded up)
+ * @example calculateTotalPages(25, 10) returns 3
  */
 export function calculateTotalPages(total: number, limit: number): number {
   return Math.ceil(total / limit);
 }
 
 /**
- * Validate and normalize pagination parameters
+ * Validate and normalize pagination parameters to ensure valid values
+ * @param page - Page number (defaults to 1 if invalid)
+ * @param limit - Items per page (defaults to defaultLimit if invalid)
+ * @param maxLimit - Maximum allowed items per page (default: 100)
+ * @param defaultLimit - Default items per page (default: 10)
+ * @returns Normalized pagination parameters
+ * @example normalizePagination(0, 200, 100, 10) returns { page: 1, limit: 100 }
  */
 export function normalizePagination(
   page?: number,
@@ -65,7 +79,12 @@ export function normalizePagination(
 }
 
 /**
- * Create pagination result with metadata
+ * Create a standardized pagination result object with metadata
+ * @param data - Array of items for the current page
+ * @param total - Total number of items across all pages
+ * @param page - Current page number
+ * @param limit - Items per page
+ * @returns Pagination result object with data and metadata
  */
 export function createPaginationResult<T>(
   data: T[],

@@ -10,6 +10,9 @@ import {
 export class SocialService {
   /**
    * Follow a user
+   * @param followerId - ID of the user who wants to follow
+   * @param followingId - ID of the user to be followed
+   * @throws {AppError} If self-follow, user not found, already following, or user is blocked
    */
   async followUser(followerId: string, followingId: string): Promise<void> {
     // Prevent self-follow
@@ -71,6 +74,9 @@ export class SocialService {
 
   /**
    * Unfollow a user
+   * @param followerId - ID of the user who wants to unfollow
+   * @param followingId - ID of the user to be unfollowed
+   * @throws {AppError} If not currently following the user
    */
   async unfollowUser(followerId: string, followingId: string): Promise<void> {
     // Find the follow relationship

@@ -11,6 +11,13 @@ import {
 export class ContentService {
   /**
    * Create a new post
+   * @param authorId - ID of the user creating the post
+   * @param data - Post data
+   * @param data.content - Post content (max 5000 characters, trimmed)
+   * @param data.mediaUrls - Optional array of media file URLs (max 10)
+   * @param data.visibility - Post visibility: 'public', 'private', or 'friends' (default: 'public')
+   * @returns Created post object with author information
+   * @throws {AppError} If content is empty, too long, or has too many media files
    */
   async createPost(
     authorId: string,
