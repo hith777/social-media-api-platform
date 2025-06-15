@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { env } from '@/config/env'
 
 /**
@@ -20,11 +20,25 @@ const createApiClient = (): AxiosInstance => {
 export const apiClient: AxiosInstance = createApiClient()
 
 /**
- * Request interceptor - can be extended later for auth tokens
+ * Request interceptor - adds auth token to requests
  */
 apiClient.interceptors.request.use(
-  (config) => {
-    // Add any default request modifications here
+  (config: InternalAxiosRequestConfig) => {
+    // Get token from localStorage (will be replaced with Zustand store later)
+    if (typeof window !== 'undefined') {
+      const authStorage = localStorage.getItem('auth-storage')
+      if (authStorage) {
+        try {
+          const authData = JSON.parse(authStorage)
+          const accessToken = authData?.state?.accessToken
+          if (accessToken && config.headers) {
+            config.headers.Authorization = `Bearer ${accessToken}`
+          }
+        } catch (error) {
+          // Ignore parsing errors
+        }
+      }
+    }
     return config
   },
   (error) => {
