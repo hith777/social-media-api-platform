@@ -47,14 +47,30 @@ apiClient.interceptors.request.use(
 )
 
 /**
- * Response interceptor - can be extended later for error handling
+ * Response interceptor - handles errors and token refresh
  */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response
   },
-  (error) => {
-    // Default error handling - can be extended later
+  async (error) => {
+    const originalRequest = error.config
+
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      // Try to refresh token (will be implemented in next commit)
+      // For now, clear auth and reject
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth-storage')
+        // Redirect to login will be handled by auth logic
+      }
+
+      return Promise.reject(error)
+    }
+
+    // Handle other errors
     return Promise.reject(error)
   }
 )
