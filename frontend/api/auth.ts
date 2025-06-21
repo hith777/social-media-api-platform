@@ -57,3 +57,46 @@ export async function getCurrentUser(): Promise<User> {
   return get<User>('/users/me')
 }
 
+/**
+ * Request password reset
+ */
+export interface RequestPasswordResetRequest {
+  email: string
+}
+
+export async function requestPasswordReset(
+  data: RequestPasswordResetRequest
+): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/forgot-password', data)
+}
+
+/**
+ * Reset password
+ */
+export interface ResetPasswordRequest {
+  token: string
+  password: string
+}
+
+export async function resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/reset-password', data)
+}
+
+/**
+ * Verify email
+ */
+export interface VerifyEmailRequest {
+  token: string
+}
+
+export async function verifyEmail(data: VerifyEmailRequest): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/verify-email', data)
+}
+
+/**
+ * Resend verification email
+ */
+export async function resendVerificationEmail(): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/resend-verification', {})
+}
+
