@@ -1,31 +1,16 @@
 import { post, get } from './utils'
-import { LoginResponse, RegisterResponse, RefreshTokenResponse, User } from '@/types/api'
-
-/**
- * Login request payload
- */
-export interface LoginRequest {
-  identifier: string // email or username
-  password: string
-}
-
-/**
- * Register request payload
- */
-export interface RegisterRequest {
-  email: string
-  username: string
-  password: string
-  firstName?: string
-  lastName?: string
-}
-
-/**
- * Refresh token request payload
- */
-export interface RefreshTokenRequest {
-  refreshToken: string
-}
+import {
+  LoginRequest,
+  RegisterRequest,
+  RefreshTokenRequest,
+  RequestPasswordResetRequest,
+  ResetPasswordRequest,
+  VerifyEmailRequest,
+  LoginResponse,
+  RegisterResponse,
+  RefreshTokenResponse,
+  User,
+} from '@/types/auth'
 
 /**
  * Login user
@@ -60,10 +45,6 @@ export async function getCurrentUser(): Promise<User> {
 /**
  * Request password reset
  */
-export interface RequestPasswordResetRequest {
-  email: string
-}
-
 export async function requestPasswordReset(
   data: RequestPasswordResetRequest
 ): Promise<{ message: string }> {
@@ -73,11 +54,6 @@ export async function requestPasswordReset(
 /**
  * Reset password
  */
-export interface ResetPasswordRequest {
-  token: string
-  password: string
-}
-
 export async function resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
   return post<{ message: string }>('/users/reset-password', data)
 }
@@ -85,10 +61,6 @@ export async function resetPassword(data: ResetPasswordRequest): Promise<{ messa
 /**
  * Verify email
  */
-export interface VerifyEmailRequest {
-  token: string
-}
-
 export async function verifyEmail(data: VerifyEmailRequest): Promise<{ message: string }> {
   return post<{ message: string }>('/users/verify-email', data)
 }
