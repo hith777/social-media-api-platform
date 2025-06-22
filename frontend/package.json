@@ -17,7 +17,10 @@
     "tailwind-merge": "^2.0.0",
     "lucide-react": "^0.294.0",
     "zustand": "^4.4.7",
-    "axios": "^1.6.2"
+    "axios": "^1.6.2",
+    "react-hook-form": "^7.48.2",
+    "@hookform/resolvers": "^3.3.2",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -30,6 +33,7 @@
     "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-label": "^2.0.2",
     "tailwindcss-animate": "^1.0.7"
   }
 }
