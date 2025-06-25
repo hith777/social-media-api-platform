@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
 import { login, register as registerApi, getCurrentUser } from '@/api/auth'
+import {
+  setAccessToken as setToken,
+  setRefreshToken as setRefresh,
+  clearTokens,
+} from '@/utils/tokenManager'
 
 interface AuthState {
   user: User | null
@@ -33,8 +38,11 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setTokens: (accessToken, refreshToken) =>
-        set({ accessToken, refreshToken }),
+      setTokens: (accessToken, refreshToken) => {
+        if (accessToken) setToken(accessToken)
+        if (refreshToken) setRefresh(refreshToken)
+        set({ accessToken, refreshToken })
+      },
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
@@ -43,6 +51,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
         try {
           const response = await login(credentials)
+          setToken(response.accessToken)
+          setRefresh(response.refreshToken)
           set({
             user: response.user,
             accessToken: response.accessToken,
@@ -95,14 +105,16 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () =>
+      logout: () => {
+        clearTokens()
         set({
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
           error: null,
-        }),
+        })
+      },
     }),
     {
       name: 'auth-storage',

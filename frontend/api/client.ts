@@ -1,5 +1,12 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { env } from '@/config/env'
+import {
+  getAccessToken,
+  getRefreshToken,
+  clearTokens,
+  setAccessToken,
+  setRefreshToken,
+} from '@/utils/tokenManager'
 
 /**
  * Create and configure Axios instance
@@ -58,20 +65,10 @@ async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: 
  */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage (will be replaced with Zustand store later)
-    if (typeof window !== 'undefined') {
-      const authStorage = localStorage.getItem('auth-storage')
-      if (authStorage) {
-        try {
-          const authData = JSON.parse(authStorage)
-          const accessToken = authData?.state?.accessToken
-          if (accessToken && config.headers) {
-            config.headers.Authorization = `Bearer ${accessToken}`
-          }
-        } catch (error) {
-          // Ignore parsing errors
-        }
-      }
+    // Get token from token manager
+    const accessToken = getAccessToken()
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`
     }
     return config
   },
@@ -96,33 +93,20 @@ apiClient.interceptors.response.use(
 
       if (typeof window !== 'undefined') {
         try {
-          // Get refresh token from storage
-          const authStorage = localStorage.getItem('auth-storage')
-          if (!authStorage) {
-            throw new Error('No auth storage found')
-          }
+          // Get refresh token from token manager
+          const refreshTokenValue = getRefreshToken()
 
-          const authData = JSON.parse(authStorage)
-          const refreshToken = authData?.state?.refreshToken
-
-          if (!refreshToken) {
+          if (!refreshTokenValue) {
             throw new Error('No refresh token found')
           }
 
           // Attempt to refresh the token
-          const newTokens = await refreshAccessToken(refreshToken)
+          const newTokens = await refreshAccessToken(refreshTokenValue)
 
           if (newTokens) {
-            // Update tokens in storage
-            const updatedAuthData = {
-              ...authData,
-              state: {
-                ...authData.state,
-                accessToken: newTokens.accessToken,
-                refreshToken: newTokens.refreshToken,
-              },
-            }
-            localStorage.setItem('auth-storage', JSON.stringify(updatedAuthData))
+            // Update tokens using token manager
+            setAccessToken(newTokens.accessToken)
+            setRefreshToken(newTokens.refreshToken)
 
             // Update the original request with new token
             if (originalRequest.headers) {
@@ -133,8 +117,8 @@ apiClient.interceptors.response.use(
             return apiClient(originalRequest)
           }
         } catch (refreshError) {
-          // Refresh failed - clear auth and reject
-          localStorage.removeItem('auth-storage')
+          // Refresh failed - clear tokens
+          clearTokens()
           // Redirect to login will be handled by auth logic
         }
       }
