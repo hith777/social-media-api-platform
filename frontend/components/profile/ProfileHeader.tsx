@@ -5,6 +5,7 @@ import Image from 'next/image'
 import type { User } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { EditProfileDialog } from './EditProfileDialog'
+import { AvatarUpload } from './AvatarUpload'
 
 interface ProfileHeaderProps {
   user: User
@@ -13,6 +14,7 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isAvatarEditOpen, setIsAvatarEditOpen] = useState(false)
 
   return (
     <>
@@ -61,9 +63,17 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
               </div>
             </div>
 
-            <Button onClick={() => setIsEditOpen(true)} variant="outline">
-              Edit Profile
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsEditOpen(true)} variant="outline">
+                Edit Profile
+              </Button>
+              <Button
+                onClick={() => setIsAvatarEditOpen(true)}
+                variant="outline"
+              >
+                Change Avatar
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -74,6 +84,36 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
         onOpenChange={setIsEditOpen}
         onUpdate={onUpdate}
       />
+
+      {isAvatarEditOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setIsAvatarEditOpen(false)}
+        >
+          <div
+            className="bg-background rounded-lg border p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-4">Change Avatar</h2>
+            <AvatarUpload
+              currentAvatar={user.avatar}
+              username={user.username}
+              onUploadComplete={(avatarUrl) => {
+                onUpdate({ ...user, avatar: avatarUrl })
+                setIsAvatarEditOpen(false)
+              }}
+            />
+            <div className="mt-4 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsAvatarEditOpen(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
