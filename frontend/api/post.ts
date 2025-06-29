@@ -1,5 +1,7 @@
-import { get, post, put, del } from './utils'
-import type { Post, PaginatedResponse } from '@/types/api'
+import { get, post, put, del, upload } from './utils'
+import { apiClient } from './client'
+import { extractData, handleApiError } from './utils'
+import type { Post, PaginatedResponse, ApiResponse } from '@/types/api'
 
 /**
  * Create post request
@@ -32,10 +34,69 @@ export interface PostQueryParams {
 }
 
 /**
- * Create a new post
+ * Create a new post with media upload
  */
-export async function createPost(data: CreatePostRequest): Promise<Post> {
+export async function createPost(
+  data: CreatePostRequest,
+  mediaFiles?: File[]
+): Promise<Post> {
+  if (mediaFiles && mediaFiles.length > 0) {
+    const formData = new FormData()
+    formData.append('content', data.content)
+    if (data.visibility) {
+      formData.append('visibility', data.visibility)
+    }
+    
+    // Append media files
+    mediaFiles.forEach((file) => {
+      formData.append('media', file)
+    })
+
+    return upload<Post>('/posts', formData)
+  }
+
   return post<Post>('/posts', data)
+}
+
+/**
+ * Update a post with media upload
+ */
+export async function updatePostWithMedia(
+  postId: string,
+  data: UpdatePostRequest,
+  mediaFiles?: File[]
+): Promise<Post> {
+  if (mediaFiles && mediaFiles.length > 0) {
+    const formData = new FormData()
+    if (data.content) {
+      formData.append('content', data.content)
+    }
+    if (data.visibility) {
+      formData.append('visibility', data.visibility)
+    }
+    
+    // Append media files
+    mediaFiles.forEach((file) => {
+      formData.append('media', file)
+    })
+
+    try {
+      const response = await apiClient.put<ApiResponse<Post>>(
+        `/posts/${postId}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      )
+      return extractData(response)
+    } catch (error) {
+      throw handleApiError(error)
+    }
+  }
+
+  return updatePost(postId, data)
 }
 
 /**
