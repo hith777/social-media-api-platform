@@ -2,35 +2,19 @@ import { get, post, put, del, upload } from './utils'
 import { apiClient } from './client'
 import { extractData, handleApiError } from './utils'
 import type { Post, PaginatedResponse, ApiResponse } from '@/types/api'
+import type {
+  CreatePostRequest,
+  UpdatePostRequest,
+  PostQueryParams,
+  ReportPostRequest,
+} from '@/types/post'
 
-/**
- * Create post request
- */
-export interface CreatePostRequest {
-  content: string
-  mediaUrls?: string[]
-  visibility?: 'public' | 'private' | 'friends'
-}
-
-/**
- * Update post request
- */
-export interface UpdatePostRequest {
-  content?: string
-  mediaUrls?: string[]
-  visibility?: 'public' | 'private' | 'friends'
-}
-
-/**
- * Post query parameters
- */
-export interface PostQueryParams {
-  page?: number
-  limit?: number
-  sortBy?: 'newest' | 'oldest' | 'popular'
-  search?: string
-  visibility?: 'public' | 'private' | 'friends'
-  authorId?: string
+// Re-export types for convenience
+export type {
+  CreatePostRequest,
+  UpdatePostRequest,
+  PostQueryParams,
+  ReportPostRequest,
 }
 
 /**
@@ -156,11 +140,6 @@ export async function getFeed(
 /**
  * Report a post
  */
-export interface ReportPostRequest {
-  reason: string
-  description?: string
-}
-
 export async function reportPost(
   postId: string,
   data: ReportPostRequest
