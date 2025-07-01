@@ -1,41 +1,66 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { getFeed } from '@/api/post'
 import type { Post, PaginatedResponse } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
-import { Button } from '@/components/ui/button'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 
 export function FeedPage() {
   const { isAuthenticated } = useAuthStore()
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState<PaginatedResponse<Post>['pagination'] | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const fetchFeed = useCallback(async (page: number, append: boolean = false) => {
+    if (append) {
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
+    setError(null)
+    
+    try {
+      const response = await getFeed({ page, limit: 10 })
+      if (append) {
+        setPosts((prev) => [...prev, ...response.data])
+      } else {
+        setPosts(response.data)
+      }
+      setPagination(response.pagination)
+      setCurrentPage(page)
+    } catch (err: any) {
+      setError(err.message || 'Failed to load feed')
+    } finally {
+      setIsLoading(false)
+      setIsLoadingMore(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated) {
       return
     }
 
-    const fetchFeed = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const response = await getFeed({ page: 1, limit: 10 })
-        setPosts(response.data)
-        setPagination(response.pagination)
-      } catch (err: any) {
-        setError(err.message || 'Failed to load feed')
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    fetchFeed(1, false)
+  }, [isAuthenticated, fetchFeed])
 
-    fetchFeed()
-  }, [isAuthenticated])
+  const loadMore = useCallback(() => {
+    if (pagination?.hasNext && !isLoadingMore && !isLoading) {
+      fetchFeed(currentPage + 1, true)
+    }
+  }, [pagination, currentPage, isLoadingMore, isLoading, fetchFeed])
+
+  const { observerTarget } = useInfiniteScroll({
+    hasNextPage: pagination?.hasNext ?? false,
+    isLoading: isLoadingMore,
+    onLoadMore: loadMore,
+  })
 
   const handleLike = (postId: string) => {
     // TODO: Implement like functionality
@@ -117,13 +142,10 @@ export function FeedPage() {
         )}
 
         {pagination && pagination.hasNext && (
-          <div className="flex justify-center">
-            <Button variant="outline" onClick={() => {
-              // TODO: Implement load more
-              console.log('Load more posts')
-            }}>
-              Load More
-            </Button>
+          <div ref={observerTarget} className="flex justify-center py-4">
+            {isLoadingMore && (
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            )}
           </div>
         )}
       </div>
