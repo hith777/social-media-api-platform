@@ -8,10 +8,11 @@ import type { Post } from '@/types/api'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
+import { togglePostLike } from '@/api/social'
 
 interface PostCardProps {
   post: Post
-  onLike?: (postId: string) => void
+  onLike?: (postId: string, isLiked: boolean, likesCount: number) => void
   onComment?: (postId: string) => void
   onShare?: (postId: string) => void
   onMore?: (postId: string) => void
@@ -25,6 +26,9 @@ export function PostCard({
   onMore,
 }: PostCardProps) {
   const [imageError, setImageError] = useState<Set<number>>(new Set())
+  const [isLiked, setIsLiked] = useState(post.isLiked)
+  const [likesCount, setLikesCount] = useState(post.likesCount)
+  const [isLiking, setIsLiking] = useState(false)
 
   const handleImageError = (index: number) => {
     setImageError((prev) => new Set(prev).add(index))
@@ -35,6 +39,30 @@ export function PostCard({
       return formatDistanceToNow(new Date(dateString), { addSuffix: true })
     } catch {
       return dateString
+    }
+  }
+
+  const handleLike = async () => {
+    if (isLiking) return
+
+    // Optimistic update
+    const newIsLiked = !isLiked
+    const newLikesCount = newIsLiked ? likesCount + 1 : likesCount - 1
+    setIsLiked(newIsLiked)
+    setLikesCount(newLikesCount)
+    setIsLiking(true)
+
+    try {
+      const response = await togglePostLike(post.id)
+      setIsLiked(response.isLiked)
+      setLikesCount(response.likesCount)
+      onLike?.(post.id, response.isLiked, response.likesCount)
+    } catch (error) {
+      // Revert on error
+      setIsLiked(isLiked)
+      setLikesCount(likesCount)
+    } finally {
+      setIsLiking(false)
     }
   }
 
@@ -129,13 +157,14 @@ export function PostCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onLike?.(post.id)}
-            className={`gap-2 ${post.isLiked ? 'text-red-500' : ''}`}
+            onClick={handleLike}
+            disabled={isLiking}
+            className={`gap-2 ${isLiked ? 'text-red-500' : ''}`}
           >
             <Heart
-              className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`}
+              className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`}
             />
-            <span>{post.likesCount}</span>
+            <span>{likesCount}</span>
           </Button>
 
           <Button
