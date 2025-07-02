@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Image as ImageIcon, X } from 'lucide-react'
 import { createPost } from '@/api/post'
 import type { Post } from '@/types/api'
+import { PostVisibilitySelector } from './PostVisibilitySelector'
 
 const createPostSchema = z.object({
   content: z.string().min(1, 'Content is required').max(5000, 'Content must be less than 5000 characters'),
@@ -36,6 +37,7 @@ export function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps)
     formState: { errors },
     reset,
     watch,
+    setValue,
   } = useForm<CreatePostFormData>({
     resolver: zodResolver(createPostSchema),
     defaultValues: {
@@ -192,15 +194,11 @@ export function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps)
                 </Button>
               </label>
 
-              <select
-                {...register('visibility')}
-                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              <PostVisibilitySelector
+                value={visibility}
+                onChange={(value) => setValue('visibility', value)}
                 disabled={isSubmitting}
-              >
-                <option value="public">Public</option>
-                <option value="friends">Friends</option>
-                <option value="private">Private</option>
-              </select>
+              />
             </div>
 
             <div className="flex gap-2">
