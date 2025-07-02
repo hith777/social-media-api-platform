@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import cors from 'cors';
 import { env } from './config/env';
 import logger from './config/logger';
+
 import { errorHandler, AppError } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { securityConfig, corsOptions } from './config/security';
@@ -18,6 +19,9 @@ import socialRoutes from './routes/socialRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import searchRoutes from './routes/searchRoutes';
 import batchRoutes from './routes/batchRoutes';
+
+// Initialize Sentry early (before routes)
+initializeSentry();
 
 const app = express();
 const httpServer = createServer(app);
@@ -83,6 +87,15 @@ const io = initializeWebSocket(httpServer);
 
 // Start server only if not in test mode
 if (env.NODE_ENV !== 'test') {
+  httpServer.on('error', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EADDRINUSE') {
+      logger.error(`Port ${PORT} is already in use. Please use a different port.`);
+    } else {
+      logger.error('Server error:', error);
+    }
+    process.exit(1);
+  });
+  
   httpServer.listen(PORT, () => {
     logger.info(`Server is running on port ${PORT} in ${env.NODE_ENV} mode`);
     logger.info(`WebSocket server initialized on /socket.io`);

@@ -23,35 +23,49 @@ const consoleFormat = winston.format.combine(
 );
 
 // Create logger instance
+// Only use file transports if logs directory exists and is writable
+const transports: winston.transport[] = [
+  // Write all logs to console
+  new winston.transports.Console({
+    format: env.NODE_ENV === 'production' ? logFormat : consoleFormat,
+  }),
+];
+
+// Only add file transports in production or if logs directory exists
+if (env.NODE_ENV === 'production') {
+  try {
+    transports.push(
+      // Write all logs with level 'error' and below to error.log
+      new winston.transports.File({
+        filename: 'logs/error.log',
+        level: 'error',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      }),
+      // Write all logs to combined.log
+      new winston.transports.File({
+        filename: 'logs/combined.log',
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+      })
+    );
+  } catch (error) {
+    // If file transport fails, continue with console only
+    console.warn('Failed to initialize file transports, using console only');
+  }
+}
+
 const logger = winston.createLogger({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: logFormat,
   defaultMeta: { service: 'social-media-api' },
-  transports: [
-    // Write all logs to console
-    new winston.transports.Console({
-      format: env.NODE_ENV === 'production' ? logFormat : consoleFormat,
-    }),
-    // Write all logs with level 'error' and below to error.log
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    // Write all logs to combined.log
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-  ],
-  exceptionHandlers: [
+  transports,
+  exceptionHandlers: env.NODE_ENV === 'production' ? [
     new winston.transports.File({ filename: 'logs/exceptions.log' }),
-  ],
-  rejectionHandlers: [
+  ] : undefined,
+  rejectionHandlers: env.NODE_ENV === 'production' ? [
     new winston.transports.File({ filename: 'logs/rejections.log' }),
-  ],
+  ] : undefined,
 });
 
 // If we're not in production, log to the console with the simple format

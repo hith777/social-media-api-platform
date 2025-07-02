@@ -1,10 +1,22 @@
-import * as Sentry from '@sentry/node';
 import { env } from './env';
+
+// Try to import Sentry, but make it optional
+let Sentry: any = null;
+try {
+  Sentry = require('@sentry/node');
+} catch (error) {
+  console.warn('@sentry/node not installed, Sentry features disabled');
+}
 
 /**
  * Initialize Sentry for error tracking and monitoring
  */
 export function initializeSentry(): void {
+  if (!Sentry) {
+    console.log('Sentry not available, skipping Sentry initialization');
+    return;
+  }
+  
   if (!env.SENTRY_DSN) {
     console.log('Sentry DSN not provided, skipping Sentry initialization');
     return;
@@ -34,17 +46,23 @@ export function initializeSentry(): void {
 /**
  * Sentry error handler middleware
  */
-export const sentryErrorHandler = Sentry.Handlers.errorHandler();
+export const sentryErrorHandler = Sentry
+  ? Sentry.Handlers.errorHandler()
+  : ((_req: any, _res: any, next: any) => next());
 
 /**
  * Sentry request handler middleware
  */
-export const sentryRequestHandler = Sentry.Handlers.requestHandler();
+export const sentryRequestHandler = Sentry
+  ? Sentry.Handlers.requestHandler()
+  : ((_req: any, _res: any, next: any) => next());
 
 /**
  * Capture exception manually
  */
 export function captureException(error: Error, context?: Record<string, any>): void {
+  if (!Sentry) return;
+  
   if (context) {
     Sentry.withScope((scope) => {
       Object.keys(context).forEach((key) => {
@@ -60,7 +78,8 @@ export function captureException(error: Error, context?: Record<string, any>): v
 /**
  * Capture message manually
  */
-export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info'): void {
+export function captureMessage(message: string, level: any = 'info'): void {
+  if (!Sentry) return;
   Sentry.captureMessage(message, level);
 }
 
