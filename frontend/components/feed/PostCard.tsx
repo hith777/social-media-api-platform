@@ -7,15 +7,18 @@ import { formatDistanceToNow } from 'date-fns'
 import type { Post } from '@/types/api'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
+import { Heart, MessageCircle, Share2 } from 'lucide-react'
 import { togglePostLike } from '@/api/social'
+import { PostActionsMenu } from './PostActionsMenu'
 
 interface PostCardProps {
   post: Post
   onLike?: (postId: string, isLiked: boolean, likesCount: number) => void
   onComment?: (postId: string) => void
   onShare?: (postId: string) => void
-  onMore?: (postId: string) => void
+  onEdit?: (post: Post) => void
+  onDelete?: (postId: string) => void
+  onReport?: (postId: string) => void
 }
 
 export function PostCard({
@@ -23,7 +26,9 @@ export function PostCard({
   onLike,
   onComment,
   onShare,
-  onMore,
+  onEdit,
+  onDelete,
+  onReport,
 }: PostCardProps) {
   const [imageError, setImageError] = useState<Set<number>>(new Set())
   const [isLiked, setIsLiked] = useState(post.isLiked)
@@ -99,16 +104,12 @@ export function PostCard({
               </p>
             </div>
           </div>
-          {onMore && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onMore(post.id)}
-              className="h-8 w-8"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          )}
+          <PostActionsMenu
+            post={post}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onReport={onReport}
+          />
         </div>
       </CardHeader>
 
