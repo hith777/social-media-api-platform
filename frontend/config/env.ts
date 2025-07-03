@@ -7,9 +7,27 @@ const requiredEnvVars = ['NEXT_PUBLIC_API_URL'] as const
 
 type RequiredEnvVar = (typeof requiredEnvVars)[number]
 
-function getEnvVar(key: RequiredEnvVar): string {
+function getEnvVar(key: RequiredEnvVar, defaultValue?: string): string {
   const value = process.env[key]
   if (!value) {
+    if (defaultValue !== undefined) {
+      console.warn(`Environment variable ${key} not set, using default: ${defaultValue}`)
+      return defaultValue
+    }
+    // Only throw in production, in development provide a helpful default
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Missing required environment variable: ${key}`)
+    }
+    // Development default
+    const devDefaults: Record<string, string> = {
+      'NEXT_PUBLIC_API_URL': 'http://localhost:3000/api',
+    }
+    const devValue = devDefaults[key]
+    if (devValue) {
+      console.warn(`⚠️  ${key} not set in .env.local, using default: ${devValue}`)
+      console.warn(`   Please create .env.local with: ${key}=${devValue}`)
+      return devValue
+    }
     throw new Error(`Missing required environment variable: ${key}`)
   }
   return value
@@ -21,7 +39,7 @@ function getOptionalEnvVar(key: string, defaultValue: string = ''): string {
 
 export const env = {
   // API Configuration
-  apiUrl: getEnvVar('NEXT_PUBLIC_API_URL'),
+  apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000/api'),
   wsUrl: getOptionalEnvVar('NEXT_PUBLIC_WS_URL', 'http://localhost:3000'),
 
   // App Configuration
