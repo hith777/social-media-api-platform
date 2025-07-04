@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import type { Comment } from '@/types/api'
 import { Button } from '@/components/ui/button'
-import { Heart, Reply, MoreVertical } from 'lucide-react'
-import { toggleCommentLike } from '@/api/comment'
+import { Heart, Reply, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react'
+import { toggleCommentLike, getCommentReplies } from '@/api/comment'
 
 interface CommentItemProps {
   comment: Comment
@@ -15,10 +15,13 @@ interface CommentItemProps {
   onUpdate?: () => void
 }
 
-export function CommentItem({ comment, replies, postId, onUpdate }: CommentItemProps) {
+export function CommentItem({ comment, replies: initialReplies, postId, onUpdate }: CommentItemProps) {
   const [isLiked, setIsLiked] = useState(comment.isLiked || false)
   const [likeCount, setLikeCount] = useState(comment.likesCount || 0)
   const [showReplies, setShowReplies] = useState(false)
+  const [replies, setReplies] = useState<Comment[]>(initialReplies)
+  const [isLoadingReplies, setIsLoadingReplies] = useState(false)
+  const [repliesCount, setRepliesCount] = useState(comment.repliesCount || 0)
 
   const handleLike = async () => {
     // Optimistic update
@@ -36,6 +39,33 @@ export function CommentItem({ comment, replies, postId, onUpdate }: CommentItemP
       setLikeCount(newIsLiked ? likeCount - 1 : likeCount + 1)
     }
   }
+
+  const handleLoadReplies = async () => {
+    if (replies.length > 0) {
+      setShowReplies(!showReplies)
+      return
+    }
+
+    setIsLoadingReplies(true)
+    try {
+      const response = await getCommentReplies(comment.id, { page: 1, limit: 50 })
+      setReplies(response.data)
+      setRepliesCount(response.data.length)
+      setShowReplies(true)
+    } catch (error) {
+      console.error('Failed to load replies:', error)
+    } finally {
+      setIsLoadingReplies(false)
+    }
+  }
+
+  // Update replies when initialReplies prop changes
+  useEffect(() => {
+    if (initialReplies.length > 0) {
+      setReplies(initialReplies)
+      setRepliesCount(initialReplies.length)
+    }
+  }, [initialReplies])
 
   return (
     <div className="flex gap-3 py-4">
@@ -96,36 +126,59 @@ export function CommentItem({ comment, replies, postId, onUpdate }: CommentItemP
         </div>
 
         {/* Replies */}
-        {replies.length > 0 && (
-          <div className="mt-4 ml-4 border-l-2 border-muted pl-4">
+        {(repliesCount > 0 || replies.length > 0) && (
+          <div className="mt-4 ml-4 border-l-2 border-muted pl-4 space-y-2">
             {showReplies ? (
               <>
-                {replies.map((reply) => (
-                  <CommentItem
-                    key={reply.id}
-                    comment={reply}
-                    replies={[]}
-                    postId={postId}
-                    onUpdate={onUpdate}
-                  />
-                ))}
+                {isLoadingReplies ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  </div>
+                ) : (
+                  <>
+                    {replies.map((reply) => (
+                      <CommentItem
+                        key={reply.id}
+                        comment={reply}
+                        replies={[]}
+                        postId={postId}
+                        onUpdate={onUpdate}
+                      />
+                    ))}
+                    {replies.length === 0 && repliesCount > 0 && (
+                      <p className="text-xs text-muted-foreground py-2">
+                        No replies to display
+                      </p>
+                    )}
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowReplies(false)}
+                  onClick={handleLoadReplies}
                   className="mt-2 text-xs"
+                  disabled={isLoadingReplies}
                 >
-                  Hide replies
+                  <ChevronUp className="h-3 w-3 mr-1" />
+                  Hide {repliesCount || replies.length} {repliesCount === 1 || replies.length === 1 ? 'reply' : 'replies'}
                 </Button>
               </>
             ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowReplies(true)}
+                onClick={handleLoadReplies}
                 className="text-xs"
+                disabled={isLoadingReplies}
               >
-                View {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+                <ChevronDown className="h-3 w-3 mr-1" />
+                {isLoadingReplies ? (
+                  'Loading...'
+                ) : (
+                  <>
+                    View {repliesCount || replies.length} {(repliesCount || replies.length) === 1 ? 'reply' : 'replies'}
+                  </>
+                )}
               </Button>
             )}
           </div>
