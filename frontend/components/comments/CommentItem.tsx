@@ -5,8 +5,17 @@ import Image from 'next/image'
 import { formatDistanceToNow } from 'date-fns'
 import type { Comment } from '@/types/api'
 import { Button } from '@/components/ui/button'
-import { Heart, Reply, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react'
-import { toggleCommentLike, getCommentReplies } from '@/api/comment'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Heart, Reply, MoreVertical, ChevronDown, ChevronUp, Edit, Trash2 } from 'lucide-react'
+import { toggleCommentLike, getCommentReplies, updateComment, deleteComment } from '@/api/comment'
+import { useAuthStore } from '@/stores/authStore'
 
 interface CommentItemProps {
   comment: Comment
@@ -16,12 +25,19 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, replies: initialReplies, postId, onUpdate }: CommentItemProps) {
+  const { user } = useAuthStore()
   const [isLiked, setIsLiked] = useState(comment.isLiked || false)
   const [likeCount, setLikeCount] = useState(comment.likesCount || 0)
   const [showReplies, setShowReplies] = useState(false)
   const [replies, setReplies] = useState<Comment[]>(initialReplies)
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
   const [repliesCount, setRepliesCount] = useState(comment.repliesCount || 0)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(comment.content)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const isOwnComment = user?.id === comment.userId
 
   const handleLike = async () => {
     // Optimistic update
@@ -56,6 +72,52 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
       console.error('Failed to load replies:', error)
     } finally {
       setIsLoadingReplies(false)
+    }
+  }
+
+  const handleEdit = () => {
+    setIsEditing(true)
+    setEditContent(comment.content)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditContent(comment.content)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim() || editContent === comment.content) {
+      setIsEditing(false)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await updateComment(comment.id, { content: editContent.trim() })
+      setIsEditing(false)
+      onUpdate?.()
+    } catch (error) {
+      console.error('Failed to update comment:', error)
+      alert('Failed to update comment. Please try again.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await deleteComment(comment.id)
+      onUpdate?.()
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      alert('Failed to delete comment. Please try again.')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -99,8 +161,36 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
             </span>
           </div>
 
-          {/* Comment text */}
-          <p className="text-sm whitespace-pre-wrap break-words">{comment.content}</p>
+          {/* Comment text or edit form */}
+          {isEditing ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="min-h-[80px] resize-none"
+                disabled={isSaving}
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={isSaving || !editContent.trim()}
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm whitespace-pre-wrap break-words">{comment.content}</p>
+          )}
         </div>
 
         {/* Actions */}
@@ -120,9 +210,29 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
             <span className="text-xs">Reply</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 px-2 ml-auto">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
+          {isOwnComment && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 px-2 ml-auto" disabled={isDeleting}>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleEdit} disabled={isEditing || isDeleting}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Replies */}
