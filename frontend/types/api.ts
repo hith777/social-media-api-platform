@@ -105,15 +105,32 @@ export interface Comment {
 /**
  * Social interaction types
  */
+
+/**
+ * Response when following/unfollowing a user
+ */
 export interface FollowResponse {
   isFollowing: boolean
   followersCount: number
   followingCount: number
 }
 
+/**
+ * Response when liking/unliking a post
+ */
 export interface LikeResponse {
   isLiked: boolean
   likesCount: number
+}
+
+/**
+ * Follow status information for a user
+ */
+export interface FollowStatus {
+  isFollowing: boolean
+  isFollowedBy: boolean
+  followersCount: number
+  followingCount: number
 }
 
 /**
