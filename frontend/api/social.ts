@@ -1,5 +1,5 @@
-import { post, del } from './utils'
-import type { LikeResponse, FollowResponse } from '@/types/api'
+import { post, del, get } from './utils'
+import type { LikeResponse, FollowResponse, User, PaginatedResponse } from '@/types/api'
 
 /**
  * Toggle like on a post
@@ -37,5 +37,31 @@ export async function followUser(userId: string): Promise<FollowResponse> {
  */
 export async function unfollowUser(userId: string): Promise<FollowResponse> {
   return del<FollowResponse>(`/social/follow/${userId}`)
+}
+
+/**
+ * Get user's followers list
+ */
+export async function getFollowers(
+  userId: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<User>> {
+  return get<PaginatedResponse<User>>(`/social/followers/${userId}`, {
+    params: { page, limit },
+  })
+}
+
+/**
+ * Get users that a user is following
+ */
+export async function getFollowing(
+  userId: string,
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<User>> {
+  return get<PaginatedResponse<User>>(`/social/following/${userId}`, {
+    params: { page, limit },
+  })
 }
 
