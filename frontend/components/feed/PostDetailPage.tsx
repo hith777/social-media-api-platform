@@ -7,6 +7,8 @@ import type { Post } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
+import { CommentList } from '@/components/comments/CommentList'
+import { CommentForm } from '@/components/comments/CommentForm'
 
 interface PostDetailPageProps {
   postId: string
@@ -17,6 +19,7 @@ export function PostDetailPage({ postId }: PostDetailPageProps) {
   const [post, setPost] = useState<Post | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [commentKey, setCommentKey] = useState(0)
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -112,9 +115,21 @@ export function PostDetailPage({ postId }: PostDetailPageProps) {
           onMore={handleMore}
         />
 
-        {/* Comments section will be added in a later commit */}
-        <div className="text-center py-8 text-muted-foreground">
-          Comments section will be displayed here
+        {/* Comments Section */}
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Comments</h2>
+            <CommentForm
+              postId={postId}
+              onSuccess={() => {
+                setCommentKey((prev) => prev + 1)
+              }}
+            />
+          </div>
+
+          <div key={commentKey}>
+            <CommentList postId={postId} />
+          </div>
         </div>
       </div>
     </Container>

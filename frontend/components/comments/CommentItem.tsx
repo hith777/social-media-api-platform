@@ -16,6 +16,7 @@ import {
 import { Heart, Reply, MoreVertical, ChevronDown, ChevronUp, Edit, Trash2 } from 'lucide-react'
 import { toggleCommentLike, getCommentReplies, updateComment, deleteComment } from '@/api/comment'
 import { useAuthStore } from '@/stores/authStore'
+import { CommentForm } from './CommentForm'
 
 interface CommentItemProps {
   comment: Comment
@@ -36,6 +37,7 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
   const [editContent, setEditContent] = useState(comment.content)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showReplyForm, setShowReplyForm] = useState(false)
 
   const isOwnComment = user?.id === comment.userId
 
@@ -205,7 +207,12 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
             <span className="text-xs">{likeCount}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="h-8 px-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={() => setShowReplyForm(!showReplyForm)}
+          >
             <Reply className="h-4 w-4 mr-1" />
             <span className="text-xs">Reply</span>
           </Button>
@@ -234,6 +241,23 @@ export function CommentItem({ comment, replies: initialReplies, postId, onUpdate
             </DropdownMenu>
           )}
         </div>
+
+        {/* Reply Form */}
+        {showReplyForm && (
+          <div className="mt-3 ml-4 border-l-2 border-muted pl-4">
+            <CommentForm
+              postId={postId}
+              parentId={comment.id}
+              onSuccess={() => {
+                setShowReplyForm(false)
+                onUpdate?.()
+              }}
+              onCancel={() => setShowReplyForm(false)}
+              placeholder="Write a reply..."
+              autoFocus
+            />
+          </div>
+        )}
 
         {/* Replies */}
         {(repliesCount > 0 || replies.length > 0) && (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getPostComments } from '@/api/comment'
 import type { Comment, PaginatedResponse } from '@/types/api'
 import { CommentItem } from './CommentItem'
+import { CommentForm } from './CommentForm'
 import { Button } from '@/components/ui/button'
 
 interface CommentListProps {
@@ -55,14 +56,6 @@ export function CommentList({ postId, onCommentUpdate }: CommentListProps) {
     return (
       <div className="rounded-md bg-destructive/15 p-4 text-sm text-destructive">
         {error}
-      </div>
-    )
-  }
-
-  if (comments.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>No comments yet. Be the first to comment!</p>
       </div>
     )
   }
