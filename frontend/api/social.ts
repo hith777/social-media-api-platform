@@ -3,6 +3,7 @@ import type { LikeResponse, FollowResponse } from '@/types/api'
 
 /**
  * Toggle like on a post
+ * This is the preferred method as it handles both like and unlike
  */
 export async function togglePostLike(postId: string): Promise<LikeResponse> {
   return post<LikeResponse>(`/social/posts/${postId}/toggle-like`)
@@ -10,6 +11,7 @@ export async function togglePostLike(postId: string): Promise<LikeResponse> {
 
 /**
  * Like a post
+ * Alternative to togglePostLike if you need explicit like action
  */
 export async function likePost(postId: string): Promise<LikeResponse> {
   return post<LikeResponse>(`/social/posts/${postId}/like`)
@@ -17,6 +19,7 @@ export async function likePost(postId: string): Promise<LikeResponse> {
 
 /**
  * Unlike a post
+ * Alternative to togglePostLike if you need explicit unlike action
  */
 export async function unlikePost(postId: string): Promise<LikeResponse> {
   return del<LikeResponse>(`/social/posts/${postId}/like`)
