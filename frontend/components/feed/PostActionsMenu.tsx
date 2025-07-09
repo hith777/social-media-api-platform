@@ -12,8 +12,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Edit, Trash2, Flag } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, Flag, Ban } from 'lucide-react'
 import type { Post } from '@/types/api'
+import { blockUser } from '@/api/user'
 
 interface PostActionsMenuProps {
   post: Post
@@ -59,6 +60,21 @@ export function PostActionsMenu({
     onReport?.(post.id)
   }
 
+  const handleBlock = async () => {
+    if (!confirm('Are you sure you want to block this user? You won\'t be able to see their posts or interact with them.')) {
+      return
+    }
+
+    try {
+      await blockUser(post.userId)
+      alert('User blocked successfully')
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to block user:', error)
+      alert('Failed to block user. Please try again.')
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -85,10 +101,20 @@ export function PostActionsMenu({
           </>
         )}
         {!isOwnPost && (
-          <DropdownMenuItem onClick={handleReport}>
-            <Flag className="mr-2 h-4 w-4" />
-            Report
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={handleReport}>
+              <Flag className="mr-2 h-4 w-4" />
+              Report
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleBlock}
+              className="text-destructive focus:text-destructive"
+            >
+              <Ban className="mr-2 h-4 w-4" />
+              Block User
+            </DropdownMenuItem>
+          </>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

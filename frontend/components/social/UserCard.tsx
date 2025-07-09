@@ -5,12 +5,14 @@ import Link from 'next/link'
 import type { User } from '@/types/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { FollowButton } from './FollowButton'
+import { BlockButton } from './BlockButton'
 import { useAuthStore } from '@/stores/authStore'
 import { Check } from 'lucide-react'
 
 interface UserCardProps {
   user: User
   showFollowButton?: boolean
+  showBlockButton?: boolean
   variant?: 'default' | 'compact' | 'detailed'
   onClick?: (user: User) => void
 }
@@ -18,6 +20,7 @@ interface UserCardProps {
 export function UserCard({
   user,
   showFollowButton = true,
+  showBlockButton = false,
   variant = 'default',
   onClick,
 }: UserCardProps) {
@@ -147,14 +150,24 @@ export function UserCard({
             </div>
           </div>
 
-          {/* Follow Button */}
-          {showFollowButton && !isOwnProfile && (
-            <FollowButton
-              userId={user.id}
-              isFollowing={false}
-              size="sm"
-            />
-          )}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {showFollowButton && !isOwnProfile && (
+              <FollowButton
+                userId={user.id}
+                isFollowing={false}
+                size="sm"
+              />
+            )}
+            {showBlockButton && !isOwnProfile && (
+              <BlockButton
+                userId={user.id}
+                size="sm"
+                variant="ghost"
+                showAsMenu
+              />
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

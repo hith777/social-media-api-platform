@@ -80,3 +80,29 @@ export async function getFollowing(
   })
 }
 
+/**
+ * Block a user
+ */
+export async function blockUser(userId: string): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/block', { userId })
+}
+
+/**
+ * Unblock a user
+ */
+export async function unblockUser(userId: string): Promise<{ message: string }> {
+  return post<{ message: string }>('/users/unblock', { userId })
+}
+
+/**
+ * Get list of blocked users
+ */
+export async function getBlockedUsers(
+  page: number = 1,
+  limit: number = 20
+): Promise<PaginatedResponse<User>> {
+  return get<PaginatedResponse<User>>('/users/blocked', {
+    params: { page, limit },
+  })
+}
+
