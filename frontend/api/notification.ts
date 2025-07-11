@@ -1,4 +1,4 @@
-import { get, put, post } from './utils'
+import { get, put, del } from './utils'
 import type { Notification, PaginatedResponse } from '@/types/api'
 
 /**
