@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import type { Notification } from '@/types/api'
 import { Button } from '@/components/ui/button'
@@ -12,11 +13,27 @@ interface NotificationListProps {
 }
 
 export function NotificationList({ notifications, onNotificationClick }: NotificationListProps) {
-  const { deleteNotificationById } = useNotificationStore()
+  const router = useRouter()
+  const { deleteNotificationById, markNotificationAsRead } = useNotificationStore()
 
   const handleDelete = async (e: React.MouseEvent, notificationId: string) => {
     e.stopPropagation()
     await deleteNotificationById(notificationId)
+  }
+
+  const handleClick = async (notification: Notification) => {
+    if (!notification.read) {
+      await markNotificationAsRead(notification.id)
+    }
+
+    // Navigate based on notification type
+    if (notification.postId) {
+      router.push(`/posts/${notification.postId}`)
+    } else if (notification.userId) {
+      router.push(`/profile/${notification.userId}`)
+    }
+
+    onNotificationClick?.(notification)
   }
 
   if (notifications.length === 0) {
@@ -28,14 +45,14 @@ export function NotificationList({ notifications, onNotificationClick }: Notific
   }
 
   return (
-    <div className="max-h-[400px] overflow-y-auto">
+    <div>
       {notifications.map((notification) => (
         <div
           key={notification.id}
           className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
             !notification.read ? 'bg-primary/5' : ''
           }`}
-          onClick={() => onNotificationClick?.(notification)}
+          onClick={() => handleClick(notification)}
         >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
