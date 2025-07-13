@@ -1,4 +1,4 @@
-import { get } from './utils'
+import { get, getPaginated } from './utils'
 import type { Post, User, PaginatedResponse } from '@/types/api'
 
 /**
@@ -44,7 +44,21 @@ export interface TrendingPostsParams {
 export async function searchPosts(
   params: SearchPostsParams
 ): Promise<PaginatedResponse<Post>> {
-  return get<PaginatedResponse<Post>>('/search/posts', { params })
+  const queryParams: Record<string, string> = {
+    q: params.q,
+  }
+
+  if (params.page) queryParams.page = params.page.toString()
+  if (params.limit) queryParams.limit = params.limit.toString()
+  if (params.visibility) queryParams.visibility = params.visibility
+  if (params.authorId) queryParams.authorId = params.authorId
+  if (params.minLikes !== undefined) queryParams.minLikes = params.minLikes.toString()
+  if (params.minComments !== undefined) queryParams.minComments = params.minComments.toString()
+  if (params.dateFrom) queryParams.dateFrom = params.dateFrom
+  if (params.dateTo) queryParams.dateTo = params.dateTo
+  if (params.sortBy) queryParams.sortBy = params.sortBy
+
+  return getPaginated<Post>('/search/posts', { params: queryParams })
 }
 
 /**
@@ -53,7 +67,17 @@ export async function searchPosts(
 export async function searchUsers(
   params: SearchUsersParams
 ): Promise<PaginatedResponse<User>> {
-  return get<PaginatedResponse<User>>('/search/users', { params })
+  const queryParams: Record<string, string> = {
+    q: params.q,
+  }
+
+  if (params.page) queryParams.page = params.page.toString()
+  if (params.limit) queryParams.limit = params.limit.toString()
+  if (params.verifiedOnly !== undefined) queryParams.verifiedOnly = params.verifiedOnly.toString()
+  if (params.hasBio !== undefined) queryParams.hasBio = params.hasBio.toString()
+  if (params.sortBy) queryParams.sortBy = params.sortBy
+
+  return getPaginated<User>('/search/users', { params: queryParams })
 }
 
 /**
@@ -62,6 +86,11 @@ export async function searchUsers(
 export async function getTrendingPosts(
   params?: TrendingPostsParams
 ): Promise<PaginatedResponse<Post>> {
-  return get<PaginatedResponse<Post>>('/search/trending', { params })
-}
+  const queryParams: Record<string, string> = {}
 
+  if (params?.page) queryParams.page = params.page.toString()
+  if (params?.limit) queryParams.limit = params.limit.toString()
+  if (params?.timeRange) queryParams.timeRange = params.timeRange
+
+  return getPaginated<Post>('/search/trending', { params: queryParams })
+}
