@@ -7,6 +7,7 @@ import type { Post, PaginatedResponse } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { TrendingPosts } from '@/components/search/TrendingPosts'
 
 export function FeedPage() {
   const { isAuthenticated } = useAuthStore()
@@ -114,40 +115,46 @@ export function FeedPage() {
 
   return (
     <Container maxWidth="lg">
-      <div className="space-y-6 py-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Feed</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Feed</h1>
+          </div>
+
+          {posts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground mb-4">No posts in your feed yet</p>
+              <p className="text-sm text-muted-foreground">
+                Follow users to see their posts here
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  onShare={handleShare}
+                  onMore={handleMore}
+                />
+              ))}
+            </div>
+          )}
+
+          {pagination && pagination.hasNext && (
+            <div ref={observerTarget} className="flex justify-center py-4">
+              {isLoadingMore && (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              )}
+            </div>
+          )}
         </div>
 
-        {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No posts in your feed yet</p>
-            <p className="text-sm text-muted-foreground">
-              Follow users to see their posts here
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={handleLike}
-                onComment={handleComment}
-                onShare={handleShare}
-                onMore={handleMore}
-              />
-            ))}
-          </div>
-        )}
-
-        {pagination && pagination.hasNext && (
-          <div ref={observerTarget} className="flex justify-center py-4">
-            {isLoadingMore && (
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            )}
-          </div>
-        )}
+        <div className="lg:col-span-1">
+          <TrendingPosts timeRange="week" limit={5} />
+        </div>
       </div>
     </Container>
   )
