@@ -2,11 +2,13 @@
 
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { showToast } from '@/utils/toast'
 
 interface ErrorHandlerOptions {
   showToast?: boolean
   redirectTo?: string
   fallbackMessage?: string
+  toastType?: 'success' | 'error' | 'info'
 }
 
 /**
@@ -18,9 +20,10 @@ export function useErrorHandler() {
   const handleError = useCallback(
     (error: unknown, options: ErrorHandlerOptions = {}) => {
       const {
-        showToast = false,
+        showToast: shouldShowToast = false,
         redirectTo,
         fallbackMessage = 'An error occurred',
+        toastType = 'error',
       } = options
 
       let errorMessage = fallbackMessage
@@ -41,10 +44,14 @@ export function useErrorHandler() {
       // }
 
       // Show toast notification if requested
-      if (showToast) {
-        // You can integrate with a toast library here
-        // e.g., sonner, react-hot-toast, etc.
-        console.warn('Toast notification:', errorMessage)
+      if (shouldShowToast) {
+        if (toastType === 'success') {
+          showToast.success('Success', errorMessage)
+        } else if (toastType === 'error') {
+          showToast.error('Error', errorMessage)
+        } else {
+          showToast.info('Info', errorMessage)
+        }
       }
 
       // Redirect if specified

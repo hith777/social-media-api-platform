@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import '@/app/globals.css'
 import { ErrorBoundaryWrapper } from '@/components/error/ErrorBoundaryWrapper'
+import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <ErrorBoundaryWrapper>
           {children}
+          <Toaster />
         </ErrorBoundaryWrapper>
       </body>
     </html>
