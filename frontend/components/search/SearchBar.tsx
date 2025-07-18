@@ -192,7 +192,7 @@ export function SearchBar({ onSelect, placeholder = 'Search...', className }: Se
       </div>
 
       {showDropdown && (
-        <div className="absolute top-full z-50 mt-2 w-full rounded-lg border bg-popover shadow-lg">
+        <div className="absolute top-full z-50 mt-2 w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-lg border bg-popover shadow-lg">
           {isLoading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               <Loader2 className="mx-auto h-5 w-5 animate-spin" />

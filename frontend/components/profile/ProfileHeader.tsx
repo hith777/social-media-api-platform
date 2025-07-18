@@ -18,10 +18,10 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
 
   return (
     <>
-      <div className="bg-card rounded-lg border p-6">
-        <div className="flex flex-col sm:flex-row gap-6">
-          <div className="flex-shrink-0">
-            <div className="relative w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-muted">
+      <div className="bg-card rounded-lg border p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <div className="flex-shrink-0 flex justify-center sm:justify-start">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-muted">
               {user.avatar ? (
                 <Image
                   src={user.avatar}
@@ -37,18 +37,18 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
             </div>
           </div>
 
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-3 sm:space-y-4 text-center sm:text-left">
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl sm:text-2xl font-bold">
                 {user.displayName || user.username}
               </h1>
-              <p className="text-muted-foreground">@{user.username}</p>
+              <p className="text-muted-foreground text-sm sm:text-base">@{user.username}</p>
               {user.bio && (
                 <p className="mt-2 text-sm">{user.bio}</p>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-6 text-sm">
+            <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6 text-sm">
               <div>
                 <span className="font-semibold">{user.postsCount}</span>{' '}
                 <span className="text-muted-foreground">Posts</span>
@@ -63,13 +63,14 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={() => setIsEditOpen(true)} variant="outline">
+            <div className="flex flex-col sm:flex-row gap-2 justify-center sm:justify-start">
+              <Button onClick={() => setIsEditOpen(true)} variant="outline" className="w-full sm:w-auto">
                 Edit Profile
               </Button>
               <Button
                 onClick={() => setIsAvatarEditOpen(true)}
                 variant="outline"
+                className="w-full sm:w-auto"
               >
                 Change Avatar
               </Button>

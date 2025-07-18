@@ -115,10 +115,10 @@ export function FeedPage() {
 
   return (
     <Container maxWidth="lg">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 py-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 py-4 sm:py-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Feed</h1>
+            <h1 className="text-xl sm:text-2xl font-bold">Feed</h1>
           </div>
 
           {posts.length === 0 ? (
@@ -152,7 +152,7 @@ export function FeedPage() {
           )}
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 order-first lg:order-last">
           <TrendingPosts timeRange="week" limit={5} />
         </div>
       </div>

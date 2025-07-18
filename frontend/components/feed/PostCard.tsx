@@ -73,9 +73,9 @@ export function PostCard({
 
   return (
     <Card className="w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <CardHeader className="pb-3 px-4 sm:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Link href={`/profile/${post.userId}`}>
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted">
                 {post.user.avatar ? (
@@ -113,7 +113,7 @@ export function PostCard({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 sm:px-6">
         {post.content && (
           <p className="text-sm whitespace-pre-wrap break-words">
             {post.content}
@@ -154,38 +154,38 @@ export function PostCard({
           </div>
         )}
 
-        <div className="flex items-center gap-4 pt-2 border-t">
+        <div className="flex items-center gap-2 sm:gap-4 pt-2 border-t">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLike}
             disabled={isLiking}
-            className={`gap-2 ${isLiked ? 'text-red-500' : ''}`}
+            className={`gap-1 sm:gap-2 flex-1 sm:flex-initial ${isLiked ? 'text-red-500' : ''}`}
           >
             <Heart
-              className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`}
+              className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiked ? 'fill-current' : ''}`}
             />
-            <span>{likesCount}</span>
+            <span className="text-xs sm:text-sm">{likesCount}</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onComment?.(post.id)}
-            className="gap-2"
+            className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >
-            <MessageCircle className="h-5 w-5" />
-            <span>{post.commentsCount}</span>
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-xs sm:text-sm">{post.commentsCount}</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onShare?.(post.id)}
-            className="gap-2"
+            className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >
-            <Share2 className="h-5 w-5" />
-            <span>Share</span>
+            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">Share</span>
           </Button>
         </div>
       </CardContent>

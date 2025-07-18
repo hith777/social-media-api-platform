@@ -141,7 +141,7 @@ export function SearchResultsPage() {
     <div className="container mx-auto max-w-6xl py-6 px-4">
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="mb-6">
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -173,18 +173,18 @@ export function SearchResultsPage() {
 
       {query.trim() && (
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'posts' | 'users')}>
-          <div className="mb-4 flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="posts">
+          <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="posts" className="flex-1 sm:flex-initial">
                 Posts {postsPagination && `(${postsPagination.total})`}
               </TabsTrigger>
-              <TabsTrigger value="users">
+              <TabsTrigger value="users" className="flex-1 sm:flex-initial">
                 Users {usersPagination && `(${usersPagination.total})`}
               </TabsTrigger>
             </TabsList>
 
             {/* Filters */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {activeTab === 'posts' ? (
                 <>
                   <Select value={postSortBy} onValueChange={(v) => setPostSortBy(v as any)}>
@@ -269,7 +269,7 @@ export function SearchResultsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : users.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {users.map((user) => (
                   <UserCard key={user.id} user={user} />
                 ))}
