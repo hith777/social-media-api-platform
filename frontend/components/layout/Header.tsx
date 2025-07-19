@@ -3,10 +3,10 @@
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/search/SearchBar'
-import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { Navbar } from './Navbar'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Home, User, LogOut } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { LazyImage } from '@/components/ui/lazy-image'
 
 export function Header() {
@@ -37,22 +37,8 @@ export function Header() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/feed">
-                <Home className="h-5 w-5" />
-                <span className="sr-only">Home</span>
-              </Link>
-            </Button>
-
-            <Button variant="ghost" size="icon" asChild>
-              <Link href={`/profile/${user.id}`}>
-                <User className="h-5 w-5" />
-                <span className="sr-only">Profile</span>
-              </Link>
-            </Button>
-
-            <NotificationBell />
+          <div className="flex items-center gap-2">
+            <Navbar className="hidden lg:flex" />
 
             {/* User Menu */}
             <div className="flex items-center gap-2 ml-2 pl-2 border-l">
@@ -88,7 +74,7 @@ export function Header() {
                 <span className="sr-only">Logout</span>
               </Button>
             </div>
-          </nav>
+          </div>
         </div>
       </div>
     </header>
