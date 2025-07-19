@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { PostDetailPage } from '@/components/feed/PostDetailPage'
+import { PostDetailPage } from '@/components/feed/PostDetailPage.lazy'
 
 export const metadata: Metadata = {
   title: 'Post | Social Media Platform',

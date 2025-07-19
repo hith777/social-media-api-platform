@@ -7,7 +7,7 @@ import type { Post } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { CommentList } from '@/components/comments/CommentList'
+import { CommentList } from '@/components/comments/CommentList.lazy'
 import { CommentForm } from '@/components/comments/CommentForm'
 
 interface PostDetailPageProps {

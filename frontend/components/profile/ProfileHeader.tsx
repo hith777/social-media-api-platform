@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import type { User } from '@/types/api'
 import { Button } from '@/components/ui/button'
-import { EditProfileDialog } from './EditProfileDialog'
+import { EditProfileDialog } from './EditProfileDialog.lazy'
 import { AvatarUpload } from './AvatarUpload'
 import { LazyImage } from '@/components/ui/lazy-image'
 

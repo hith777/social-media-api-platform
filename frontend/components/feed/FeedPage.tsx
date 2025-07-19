@@ -7,7 +7,7 @@ import type { Post, PaginatedResponse } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { TrendingPosts } from '@/components/search/TrendingPosts'
+import { TrendingPosts } from '@/components/search/TrendingPosts.lazy'
 
 export function FeedPage() {
   const { isAuthenticated } = useAuthStore()
