@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Edit, Trash2, Flag, Ban } from 'lucide-react'
 import type { Post } from '@/types/api'
 import { blockUser } from '@/api/user'
+import { ReportPostDialog } from './ReportPostDialog'
 
 interface PostActionsMenuProps {
   post: Post
@@ -32,6 +33,7 @@ export function PostActionsMenu({
   const router = useRouter()
   const { user } = useAuthStore()
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
   const isOwnPost = user?.id === post.userId
 
   const handleDelete = async () => {
@@ -57,6 +59,7 @@ export function PostActionsMenu({
   }
 
   const handleReport = () => {
+    setIsReportDialogOpen(true)
     onReport?.(post.id)
   }
 
@@ -117,6 +120,14 @@ export function PostActionsMenu({
           </>
         )}
       </DropdownMenuContent>
+      <ReportPostDialog
+        postId={post.id}
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        onSuccess={() => {
+          setIsReportDialogOpen(false)
+        }}
+      />
     </DropdownMenu>
   )
 }
