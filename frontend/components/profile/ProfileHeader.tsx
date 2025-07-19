@@ -6,6 +6,7 @@ import type { User } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { EditProfileDialog } from './EditProfileDialog'
 import { AvatarUpload } from './AvatarUpload'
+import { LazyImage } from '@/components/ui/lazy-image'
 
 interface ProfileHeaderProps {
   user: User
@@ -21,20 +22,20 @@ export function ProfileHeader({ user, onUpdate }: ProfileHeaderProps) {
       <div className="bg-card rounded-lg border p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           <div className="flex-shrink-0 flex justify-center sm:justify-start">
-            <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-muted">
-              {user.avatar ? (
-                <Image
-                  src={user.avatar}
-                  alt={user.username}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-muted-foreground">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
+            {user.avatar ? (
+              <LazyImage
+                src={user.avatar}
+                alt={user.username}
+                width={128}
+                height={128}
+                className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full object-cover"
+                priority
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                {user.username.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 space-y-3 sm:space-y-4 text-center sm:text-left">

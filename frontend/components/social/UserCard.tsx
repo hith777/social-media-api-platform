@@ -8,6 +8,7 @@ import { FollowButton } from './FollowButton'
 import { BlockButton } from './BlockButton'
 import { useAuthStore } from '@/stores/authStore'
 import { Check } from 'lucide-react'
+import { LazyImage } from '@/components/ui/lazy-image'
 
 interface UserCardProps {
   user: User
@@ -40,7 +41,7 @@ export function UserCard({
           <div className="flex items-center gap-3">
             <Link href={`/profile/${user.id}`} onClick={(e) => e.stopPropagation()}>
               {user.avatar ? (
-                <Image
+                <LazyImage
                   src={user.avatar}
                   alt={user.username}
                   width={40}
@@ -89,7 +90,7 @@ export function UserCard({
           {/* Avatar */}
           <Link href={`/profile/${user.id}`} onClick={(e) => e.stopPropagation()}>
             {user.avatar ? (
-              <Image
+              <LazyImage
                 src={user.avatar}
                 alt={user.username}
                 width={variant === 'detailed' ? 64 : 48}

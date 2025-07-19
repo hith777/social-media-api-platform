@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Heart, MessageCircle, Share2 } from 'lucide-react'
 import { togglePostLike } from '@/api/social'
 import { PostActionsMenu } from './PostActionsMenu'
+import { LazyImage } from '@/components/ui/lazy-image'
 
 interface PostCardProps {
   post: Post
@@ -77,20 +78,19 @@ export function PostCard({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <Link href={`/profile/${post.userId}`}>
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted">
-                {post.user.avatar ? (
-                  <Image
-                    src={post.user.avatar}
-                    alt={post.user.username}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-sm font-bold text-muted-foreground">
-                    {post.user.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
+              {post.user.avatar ? (
+                <LazyImage
+                  src={post.user.avatar}
+                  alt={post.user.username}
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground">
+                  {post.user.username.charAt(0).toUpperCase()}
+                </div>
+              )}
             </Link>
             <div>
               <Link
@@ -137,18 +137,15 @@ export function PostCard({
               }
 
               return (
-                <div
+                <LazyImage
                   key={index}
-                  className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted"
-                >
-                  <Image
-                    src={mediaUrl}
-                    alt={`Post media ${index + 1}`}
-                    fill
-                    className="object-cover"
-                    onError={() => handleImageError(index)}
-                  />
-                </div>
+                  src={mediaUrl}
+                  alt={`Post media ${index + 1}`}
+                  fill
+                  className="w-full aspect-video rounded-lg object-cover"
+                  onError={() => handleImageError(index)}
+                  priority={index === 0}
+                />
               )
             })}
           </div>
