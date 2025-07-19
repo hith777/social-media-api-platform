@@ -5,4 +5,5 @@ export * from './DashboardLayout'
 export * from './Header'
 export * from './Navbar'
 export * from './NavigationMenu'
+export * from './Sidebar'
 
