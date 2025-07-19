@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/search/SearchBar'
 import { Navbar } from './Navbar'
+import { NavigationMenu } from './NavigationMenu'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
@@ -36,12 +37,18 @@ export function Header() {
             <SearchBar />
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center gap-2">
-            <Navbar className="hidden lg:flex" />
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden">
+            <NavigationMenu variant="mobile" />
+          </div>
 
-            {/* User Menu */}
-            <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+          {/* Navigation */}
+          <div className="hidden lg:flex items-center gap-2">
+            <Navbar />
+          </div>
+
+          {/* User Menu - Visible on all screens */}
+          <div className="flex items-center gap-2 ml-2 pl-2 border-l">
               <Link href={`/profile/${user.id}`} className="flex items-center gap-2">
                 {user.avatar ? (
                   <LazyImage

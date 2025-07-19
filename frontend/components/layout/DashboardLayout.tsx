@@ -3,6 +3,7 @@
 import { ReactNode, useState } from 'react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
+import { MobileNav } from './MobileNav'
 import { Button } from '@/components/ui/button'
 import { Menu } from 'lucide-react'
 
@@ -31,9 +32,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="sr-only">Open sidebar</span>
             </Button>
           </div>
-          <div className="min-h-[calc(100vh-4rem)]">{children}</div>
+          <div className="min-h-[calc(100vh-4rem)] pb-16 lg:pb-0">{children}</div>
         </main>
       </div>
+      <MobileNav />
     </div>
   )
 }

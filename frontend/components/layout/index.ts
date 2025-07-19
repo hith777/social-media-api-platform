@@ -6,4 +6,5 @@ export * from './Header'
 export * from './Navbar'
 export * from './NavigationMenu'
 export * from './Sidebar'
+export * from './MobileNav'
 
