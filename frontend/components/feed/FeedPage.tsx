@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { getFeed } from '@/api/post'
 import type { Post, PaginatedResponse } from '@/types/api'
+import type { PostQueryParams } from '@/types/post'
 import { PostCard } from './PostCard'
+import { PostFilters } from './PostFilters'
 import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { TrendingPosts } from '@/components/search/TrendingPosts.lazy'
@@ -17,8 +19,13 @@ export function FeedPage() {
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState<PaginatedResponse<Post>['pagination'] | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [filters, setFilters] = useState<PostQueryParams>({
+    page: 1,
+    limit: 10,
+    sortBy: 'newest',
+  })
 
-  const fetchFeed = useCallback(async (page: number, append: boolean = false) => {
+  const fetchFeed = useCallback(async (page: number, filters: PostQueryParams, append: boolean = false) => {
     if (append) {
       setIsLoadingMore(true)
     } else {
@@ -27,7 +34,7 @@ export function FeedPage() {
     setError(null)
     
     try {
-      const response = await getFeed({ page, limit: 10 })
+      const response = await getFeed({ ...filters, page, limit: 10 })
       if (append) {
         setPosts((prev) => [...prev, ...response.data])
       } else {
@@ -48,14 +55,20 @@ export function FeedPage() {
       return
     }
 
-    fetchFeed(1, false)
-  }, [isAuthenticated, fetchFeed])
+    fetchFeed(1, filters, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, filters.sortBy, filters.visibility, filters.search])
+
+  const handleFiltersChange = useCallback((newFilters: PostQueryParams) => {
+    setFilters(newFilters)
+    setCurrentPage(1)
+  }, [])
 
   const loadMore = useCallback(() => {
     if (pagination?.hasNext && !isLoadingMore && !isLoading) {
-      fetchFeed(currentPage + 1, true)
+      fetchFeed(currentPage + 1, filters, true)
     }
-  }, [pagination, currentPage, isLoadingMore, isLoading, fetchFeed])
+  }, [pagination, currentPage, isLoadingMore, isLoading, fetchFeed, filters])
 
   const { observerTarget } = useInfiniteScroll({
     hasNextPage: pagination?.hasNext ?? false,
@@ -120,6 +133,14 @@ export function FeedPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-xl sm:text-2xl font-bold">Feed</h1>
           </div>
+
+          <PostFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            showSort={true}
+            showVisibility={false}
+            showSearch={false}
+          />
 
           {posts.length === 0 ? (
             <div className="text-center py-12">
