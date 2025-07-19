@@ -14,8 +14,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Edit, Trash2, Flag, Ban } from 'lucide-react'
 import type { Post } from '@/types/api'
-import { blockUser } from '@/api/user'
 import { ReportPostDialog } from './ReportPostDialog'
+import { BlockUserDialog } from '@/components/social/BlockUserDialog'
+import { getUserProfile } from '@/api/user'
+import { useState, useEffect } from 'react'
 
 interface PostActionsMenuProps {
   post: Post
@@ -34,7 +36,27 @@ export function PostActionsMenu({
   const { user } = useAuthStore()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false)
+  const [postUser, setPostUser] = useState<any>(null)
   const isOwnPost = user?.id === post.userId
+
+  useEffect(() => {
+    if (isBlockDialogOpen && !postUser) {
+      getUserProfile(post.userId)
+        .then(setPostUser)
+        .catch(() => {
+          // Fallback user object
+          setPostUser({
+            id: post.userId,
+            username: post.user?.username || '',
+            displayName: post.user?.displayName || '',
+            email: '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+        })
+    }
+  }, [isBlockDialogOpen, post.userId, post.user, postUser])
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this post?')) {
@@ -63,19 +85,8 @@ export function PostActionsMenu({
     onReport?.(post.id)
   }
 
-  const handleBlock = async () => {
-    if (!confirm('Are you sure you want to block this user? You won\'t be able to see their posts or interact with them.')) {
-      return
-    }
-
-    try {
-      await blockUser(post.userId)
-      alert('User blocked successfully')
-      router.refresh()
-    } catch (error) {
-      console.error('Failed to block user:', error)
-      alert('Failed to block user. Please try again.')
-    }
+  const handleBlock = () => {
+    setIsBlockDialogOpen(true)
   }
 
   return (
@@ -128,6 +139,18 @@ export function PostActionsMenu({
           setIsReportDialogOpen(false)
         }}
       />
+      {postUser && (
+        <BlockUserDialog
+          user={postUser}
+          isBlocked={false}
+          open={isBlockDialogOpen}
+          onOpenChange={setIsBlockDialogOpen}
+          onSuccess={() => {
+            setIsBlockDialogOpen(false)
+            router.refresh()
+          }}
+        />
+      )}
     </DropdownMenu>
   )
 }

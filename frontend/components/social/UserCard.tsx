@@ -16,6 +16,7 @@ interface UserCardProps {
   showBlockButton?: boolean
   variant?: 'default' | 'compact' | 'detailed'
   onClick?: (user: User) => void
+  onUnblock?: (userId: string) => void
 }
 
 export function UserCard({
@@ -24,6 +25,7 @@ export function UserCard({
   showBlockButton = false,
   variant = 'default',
   onClick,
+  onUnblock,
 }: UserCardProps) {
   const { user: currentUser } = useAuthStore()
   const isOwnProfile = currentUser?.id === user.id
@@ -163,9 +165,15 @@ export function UserCard({
             {showBlockButton && !isOwnProfile && (
               <BlockButton
                 userId={user.id}
+                isBlocked={true}
                 size="sm"
                 variant="ghost"
                 showAsMenu
+                onBlockChange={(isBlocked) => {
+                  if (!isBlocked && onUnblock) {
+                    onUnblock(user.id)
+                  }
+                }}
               />
             )}
           </div>

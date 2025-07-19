@@ -8,9 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Ban, Shield, Loader2, MoreVertical } from 'lucide-react'
-import { blockUser, unblockUser } from '@/api/user'
+import { Ban, Shield, MoreVertical } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { BlockUserDialog } from './BlockUserDialog'
+import { getUserProfile } from '@/api/user'
+import type { User } from '@/types/api'
 
 interface BlockButtonProps {
   userId: string
@@ -33,103 +35,115 @@ export function BlockButton({
 }: BlockButtonProps) {
   const { user } = useAuthStore()
   const [isBlocked, setIsBlocked] = useState(initialIsBlocked)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [targetUser, setTargetUser] = useState<User | null>(null)
 
   // Don't show block button for own profile
   if (user?.id === userId) {
     return null
   }
 
-  const handleBlock = async () => {
-    if (!confirm('Are you sure you want to block this user? You won\'t be able to see their posts or interact with them.')) {
-      return
-    }
-
-    setIsLoading(true)
+  const handleOpenDialog = async () => {
     try {
-      await blockUser(userId)
-      setIsBlocked(true)
-      onBlockChange?.(true)
+      // Fetch user details if not already available
+      if (!targetUser || targetUser.id !== userId) {
+        const userData = await getUserProfile(userId)
+        setTargetUser(userData)
+      }
+      setIsDialogOpen(true)
     } catch (error) {
-      console.error('Failed to block user:', error)
-      alert('Failed to block user. Please try again.')
-    } finally {
-      setIsLoading(false)
+      console.error('Failed to fetch user:', error)
+      // Still open dialog with minimal user info
+      setTargetUser({
+        id: userId,
+        username: '',
+        displayName: '',
+        email: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as User)
+      setIsDialogOpen(true)
     }
   }
 
-  const handleUnblock = async () => {
-    setIsLoading(true)
-    try {
-      await unblockUser(userId)
-      setIsBlocked(false)
-      onBlockChange?.(false)
-    } catch (error) {
-      console.error('Failed to unblock user:', error)
-      alert('Failed to unblock user. Please try again.')
-    } finally {
-      setIsLoading(false)
-    }
+  const handleBlockSuccess = () => {
+    setIsBlocked(true)
+    onBlockChange?.(true)
+  }
+
+  const handleUnblockSuccess = () => {
+    setIsBlocked(false)
+    onBlockChange?.(false)
   }
 
   if (showAsMenu) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isLoading}>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {isBlocked ? (
-            <DropdownMenuItem onClick={handleUnblock} disabled={isLoading}>
-              <Shield className="mr-2 h-4 w-4" />
-              {isLoading ? 'Unblocking...' : 'Unblock User'}
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleOpenDialog}>
+              {isBlocked ? (
+                <>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Unblock User
+                </>
+              ) : (
+                <>
+                  <Ban className="mr-2 h-4 w-4" />
+                  Block User
+                </>
+              )}
             </DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem
-              onClick={handleBlock}
-              disabled={isLoading}
-              className="text-destructive focus:text-destructive"
-            >
-              <Ban className="mr-2 h-4 w-4" />
-              {isLoading ? 'Blocking...' : 'Block User'}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {targetUser && (
+          <BlockUserDialog
+            user={targetUser}
+            isBlocked={isBlocked}
+            open={isDialogOpen}
+            onOpenChange={setIsDialogOpen}
+            onSuccess={isBlocked ? handleUnblockSuccess : handleBlockSuccess}
+          />
+        )}
+      </>
     )
   }
 
   return (
-    <Button
-      variant={variant}
-      size={size}
-      onClick={isBlocked ? handleUnblock : handleBlock}
-      disabled={isLoading}
-      className={className}
-    >
-      {isLoading ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {isBlocked ? 'Unblocking...' : 'Blocking...'}
-        </>
-      ) : (
-        <>
-          {isBlocked ? (
-            <>
-              <Shield className="mr-2 h-4 w-4" />
-              Unblock
-            </>
-          ) : (
-            <>
-              <Ban className="mr-2 h-4 w-4" />
-              Block
-            </>
-          )}
-        </>
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        onClick={handleOpenDialog}
+        className={className}
+      >
+        {isBlocked ? (
+          <>
+            <Shield className="mr-2 h-4 w-4" />
+            Unblock
+          </>
+        ) : (
+          <>
+            <Ban className="mr-2 h-4 w-4" />
+            Block
+          </>
+        )}
+      </Button>
+      {targetUser && (
+        <BlockUserDialog
+          user={targetUser}
+          isBlocked={isBlocked}
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onSuccess={isBlocked ? handleUnblockSuccess : handleBlockSuccess}
+        />
       )}
-    </Button>
+    </>
   )
 }
 
