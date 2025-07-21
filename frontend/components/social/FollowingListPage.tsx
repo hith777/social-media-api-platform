@@ -8,6 +8,7 @@ import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { UserCard } from './UserCard'
+import { PaginationControls } from '@/components/ui/pagination'
 
 interface FollowingListPageProps {
   userId: string
@@ -26,11 +27,7 @@ export function FollowingListPage({ userId }: FollowingListPageProps) {
     setError(null)
     try {
       const response = await getFollowing(userId, page, 20)
-      if (page === 1) {
-        setFollowing(response.data)
-      } else {
-        setFollowing((prev) => [...prev, ...response.data])
-      }
+      setFollowing(response.data)
       setPagination(response.pagination)
     } catch (err: any) {
       setError(err.message || 'Failed to load following')
@@ -45,10 +42,9 @@ export function FollowingListPage({ userId }: FollowingListPageProps) {
     }
   }, [userId, currentPage])
 
-  const handleLoadMore = () => {
-    if (pagination?.hasNext && !isLoading) {
-      setCurrentPage((prev) => prev + 1)
-    }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
@@ -81,23 +77,14 @@ export function FollowingListPage({ userId }: FollowingListPageProps) {
               ))}
             </div>
 
-            {pagination?.hasNext && (
-              <div className="flex justify-center">
-                <Button
-                  variant="outline"
-                  onClick={handleLoadMore}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    'Load More'
-                  )}
-                </Button>
-              </div>
+            {pagination && pagination.totalPages > 1 && (
+              <PaginationControls
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.limit}
+              />
             )}
           </>
         )}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getBlockedUsers } from '@/api/user'
 import { UserCard } from '@/components/social/UserCard'
 import { Container } from '@/components/layout/Container'
+import { PaginationControls } from '@/components/ui/pagination'
 import type { User, PaginatedResponse } from '@/types/api'
 
 export default function BlockedUsersPage() {
@@ -11,24 +12,29 @@ export default function BlockedUsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
+  const [pagination, setPagination] = useState<PaginatedResponse<User>['pagination'] | null>(null)
 
   useEffect(() => {
     loadBlockedUsers()
-  }, [])
+  }, [page])
 
   const loadBlockedUsers = async () => {
     setIsLoading(true)
     setError(null)
     try {
       const response: PaginatedResponse<User> = await getBlockedUsers(page, 20)
-      setBlockedUsers((prev) => [...prev, ...response.data])
-      setHasMore(response.meta.hasNextPage)
+      setBlockedUsers(response.data)
+      setPagination(response.pagination)
     } catch (err: any) {
       setError(err.message || 'Failed to load blocked users')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleUnblock = (userId: string) => {
@@ -78,19 +84,14 @@ export default function BlockedUsersPage() {
               />
             ))}
 
-            {hasMore && (
-              <div className="text-center pt-4">
-                <button
-                  onClick={() => {
-                    setPage((prev) => prev + 1)
-                    loadBlockedUsers()
-                  }}
-                  disabled={isLoading}
-                  className="text-primary hover:underline"
-                >
-                  {isLoading ? 'Loading...' : 'Load More'}
-                </button>
-              </div>
+            {pagination && pagination.totalPages > 1 && (
+              <PaginationControls
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+                totalItems={pagination.total}
+                itemsPerPage={pagination.limit}
+              />
             )}
           </div>
         )}
