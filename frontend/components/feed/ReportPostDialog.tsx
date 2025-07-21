@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { useFocusTrap, useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,7 @@ export function ReportPostDialog({
   onSuccess,
 }: ReportPostDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   const {
     register,
@@ -76,6 +78,18 @@ export function ReportPostDialog({
   })
 
   const reason = watch('reason')
+
+  // Focus trap and keyboard navigation
+  useFocusTrap(dialogRef, open)
+  useKeyboardNavigation({
+    onEscape: () => {
+      if (!isSubmitting) {
+        reset()
+        onOpenChange(false)
+      }
+    },
+    enabled: open,
+  })
 
   const onSubmit = async (data: ReportFormData) => {
     setIsSubmitting(true)

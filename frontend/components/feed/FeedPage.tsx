@@ -9,11 +9,13 @@ import { PostCard } from './PostCard'
 import { PostFilters } from './PostFilters'
 import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { useKeyboardShortcut } from '@/hooks/useKeyboardNavigation'
 import { TrendingPosts } from '@/components/search/TrendingPosts.lazy'
 import { EmptyState } from '@/components/ui/empty-state'
 import { LoadingPage, LoadingSpinner } from '@/components/ui/loading'
 import { PostCardSkeleton } from '@/components/ui/skeleton'
 import { FileText, Users } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export function FeedPage() {
   const { isAuthenticated } = useAuthStore()
@@ -67,6 +69,13 @@ export function FeedPage() {
     setFilters(newFilters)
     setCurrentPage(1)
   }, [])
+
+  // Keyboard shortcuts
+  useKeyboardShortcut('k', () => router.push('/search'), { ctrl: true, enabled: isAuthenticated })
+  useKeyboardShortcut('/', () => {
+    const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]') as HTMLInputElement
+    searchInput?.focus()
+  }, { enabled: isAuthenticated })
 
   const loadMore = useCallback(() => {
     if (pagination?.hasNext && !isLoadingMore && !isLoading) {

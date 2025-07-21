@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
+import { useFocusTrap } from '@/hooks/useKeyboardNavigation'
 import { createComment } from '@/api/comment'
 import { Send } from 'lucide-react'
 
@@ -35,6 +36,7 @@ export function CommentForm({
 }: CommentFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const {
     register,
@@ -44,6 +46,9 @@ export function CommentForm({
   } = useForm<CommentFormData>({
     resolver: zodResolver(commentSchema),
   })
+
+  // Focus trap for reply forms
+  useFocusTrap(parentId ? formRef : { current: null }, !!parentId)
 
   const onSubmit = async (data: CommentFormData) => {
     setIsSubmitting(true)
@@ -65,7 +70,7 @@ export function CommentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+    <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
       <FormFieldWrapper

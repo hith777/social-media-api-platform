@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
+import { useFocusTrap, useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'
 import { updateProfile } from '@/api/user'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -36,6 +37,18 @@ export function EditProfileDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { setUser: setAuthUser } = useAuthStore()
+  const dialogRef = useRef<HTMLDivElement>(null)
+
+  // Focus trap and keyboard navigation
+  useFocusTrap(dialogRef, open)
+  useKeyboardNavigation({
+    onEscape: () => {
+      if (!isLoading) {
+        onOpenChange(false)
+      }
+    },
+    enabled: open,
+  })
 
   const {
     register,
@@ -82,7 +95,7 @@ export function EditProfileDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => onOpenChange(false)}>
-      <div className="bg-background rounded-lg border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} className="bg-background rounded-lg border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
         
         <FormError error={error} dismissible onDismiss={() => setError(null)} />
