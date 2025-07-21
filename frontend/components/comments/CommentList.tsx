@@ -7,6 +7,8 @@ import { CommentItem } from './CommentItem'
 import { CommentForm } from './CommentForm'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { CommentSkeleton } from '@/components/ui/skeleton'
 import { MessageSquare } from 'lucide-react'
 
 interface CommentListProps {
@@ -48,8 +50,13 @@ export function CommentList({ postId, onCommentUpdate }: CommentListProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-4">
+        <CommentForm postId={postId} onCommentAdded={fetchComments} />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <CommentSkeleton key={i} />
+          ))}
+        </div>
       </div>
     )
   }

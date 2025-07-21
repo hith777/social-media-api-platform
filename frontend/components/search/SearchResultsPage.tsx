@@ -6,6 +6,8 @@ import { Search, Filter, Loader2, FileText, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { PostCardSkeleton, UserCardSkeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -241,8 +243,10 @@ export function SearchResultsPage() {
 
           <TabsContent value="posts" className="mt-4">
             {isLoading && posts.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <PostCardSkeleton key={i} />
+                ))}
               </div>
             ) : posts.length > 0 ? (
               <div className="space-y-4">
@@ -251,9 +255,7 @@ export function SearchResultsPage() {
                 ))}
                 {hasNextPage && (
                   <div ref={observerTarget} className="py-4 text-center">
-                    {isLoading && (
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                    )}
+                    {isLoading && <LoadingSpinner size="md" />}
                   </div>
                 )}
               </div>
@@ -269,8 +271,10 @@ export function SearchResultsPage() {
 
           <TabsContent value="users" className="mt-4">
             {isLoading && users.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <UserCardSkeleton key={i} />
+                ))}
               </div>
             ) : users.length > 0 ? (
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -279,9 +283,7 @@ export function SearchResultsPage() {
                 ))}
                 {hasNextPage && (
                   <div ref={observerTarget} className="py-4 text-center col-span-full">
-                    {isLoading && (
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                    )}
+                    {isLoading && <LoadingSpinner size="md" />}
                   </div>
                 )}
               </div>

@@ -6,6 +6,8 @@ import { UserCard } from '@/components/social/UserCard'
 import { Container } from '@/components/layout/Container'
 import { PaginationControls } from '@/components/ui/pagination'
 import { EmptyState } from '@/components/ui/empty-state'
+import { LoadingPage } from '@/components/ui/loading'
+import { UserCardSkeleton } from '@/components/ui/skeleton'
 import { Ban } from 'lucide-react'
 import type { User, PaginatedResponse } from '@/types/api'
 
@@ -48,8 +50,10 @@ export default function BlockedUsersPage() {
       <Container>
         <div className="py-8">
           <h1 className="text-2xl font-bold mb-6">Blocked Users</h1>
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading blocked users...</p>
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <UserCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </Container>

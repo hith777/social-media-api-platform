@@ -6,10 +6,11 @@ import { getFollowing } from '@/api/social'
 import type { User, PaginatedResponse } from '@/types/api'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2, UserPlus } from 'lucide-react'
+import { ArrowLeft, UserPlus } from 'lucide-react'
 import { UserCard } from './UserCard'
 import { PaginationControls } from '@/components/ui/pagination'
 import { EmptyState } from '@/components/ui/empty-state'
+import { UserCardSkeleton } from '@/components/ui/skeleton'
 
 interface FollowingListPageProps {
   userId: string
@@ -59,8 +60,10 @@ export function FollowingListPage({ userId }: FollowingListPageProps) {
         </div>
 
         {isLoading && following.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <UserCardSkeleton key={i} />
+            ))}
           </div>
         ) : error ? (
           <div className="rounded-md bg-destructive/15 p-4 text-sm text-destructive">

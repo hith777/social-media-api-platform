@@ -11,6 +11,8 @@ import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { TrendingPosts } from '@/components/search/TrendingPosts.lazy'
 import { EmptyState } from '@/components/ui/empty-state'
+import { LoadingPage, LoadingSpinner } from '@/components/ui/loading'
+import { PostCardSkeleton } from '@/components/ui/skeleton'
 import { FileText, Users } from 'lucide-react'
 
 export function FeedPage() {
@@ -110,9 +112,18 @@ export function FeedPage() {
 
   if (isLoading) {
     return (
-      <Container>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <Container maxWidth="lg">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 py-4 sm:py-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl sm:text-2xl font-bold">Feed</h1>
+            </div>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
         </div>
       </Container>
     )
@@ -168,9 +179,7 @@ export function FeedPage() {
 
           {pagination && pagination.hasNext && (
             <div ref={observerTarget} className="flex justify-center py-4">
-              {isLoadingMore && (
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              )}
+              {isLoadingMore && <LoadingSpinner size="lg" />}
             </div>
           )}
         </div>

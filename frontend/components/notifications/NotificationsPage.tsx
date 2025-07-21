@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { CheckCheck, Trash2, Bell } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
+import { LoadingSpinner } from '@/components/ui/loading'
+import { NotificationSkeleton } from '@/components/ui/skeleton'
 
 export function NotificationsPage() {
   const {
@@ -119,8 +121,10 @@ export function NotificationsPage() {
           onNotificationClick={handleNotificationClick}
         />
         {isLoading && notifications.length === 0 && (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Loading notifications...
+          <div className="divide-y">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <NotificationSkeleton key={i} />
+            ))}
           </div>
         )}
         {!isLoading && notifications.length === 0 && !error && (
@@ -136,7 +140,7 @@ export function NotificationsPage() {
       {/* Infinite scroll trigger */}
       {hasNextPage && (
         <div ref={observerTarget} className="mt-4 text-center">
-          {isLoading && <p className="text-sm text-muted-foreground">Loading more...</p>}
+          {isLoading && <LoadingSpinner size="sm" text="Loading more..." />}
         </div>
       )}
     </div>
