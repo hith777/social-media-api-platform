@@ -5,7 +5,8 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { NotificationList } from './NotificationList'
 import { Button } from '@/components/ui/button'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { CheckCheck, Trash2 } from 'lucide-react'
+import { CheckCheck, Trash2, Bell } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export function NotificationsPage() {
   const {
@@ -123,12 +124,12 @@ export function NotificationsPage() {
           </div>
         )}
         {!isLoading && notifications.length === 0 && !error && (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            <p>No notifications yet</p>
-            <p className="mt-2 text-xs">
-              You'll see notifications here when someone interacts with your content
-            </p>
-          </div>
+          <EmptyState
+            icon={<Bell />}
+            title="No notifications yet"
+            description="You'll see notifications here when someone likes, comments, or follows you."
+            size="lg"
+          />
         )}
       </div>
 

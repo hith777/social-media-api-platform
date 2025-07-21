@@ -5,6 +5,8 @@ import { getBlockedUsers } from '@/api/user'
 import { UserCard } from '@/components/social/UserCard'
 import { Container } from '@/components/layout/Container'
 import { PaginationControls } from '@/components/ui/pagination'
+import { EmptyState } from '@/components/ui/empty-state'
+import { Ban } from 'lucide-react'
 import type { User, PaginatedResponse } from '@/types/api'
 
 export default function BlockedUsersPage() {
@@ -66,12 +68,12 @@ export default function BlockedUsersPage() {
         )}
 
         {blockedUsers.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg mb-2">No blocked users</p>
-            <p className="text-sm text-muted-foreground">
-              Users you block will appear here. You can unblock them at any time.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Ban />}
+            title="No blocked users"
+            description="Users you block will appear here. You can unblock them at any time."
+            size="lg"
+          />
         ) : (
           <div className="space-y-4">
             {blockedUsers.map((user) => (

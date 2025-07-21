@@ -6,6 +6,8 @@ import type { Comment, PaginatedResponse } from '@/types/api'
 import { CommentItem } from './CommentItem'
 import { CommentForm } from './CommentForm'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/ui/empty-state'
+import { MessageSquare } from 'lucide-react'
 
 interface CommentListProps {
   postId: string
@@ -73,8 +75,23 @@ export function CommentList({ postId, onCommentUpdate }: CommentListProps) {
     }
   })
 
+  if (topLevelComments.length === 0) {
+    return (
+      <div className="space-y-4">
+        <CommentForm postId={postId} onCommentAdded={fetchComments} />
+        <EmptyState
+          icon={<MessageSquare />}
+          title="No comments yet"
+          description="Be the first to share your thoughts on this post!"
+          size="md"
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
+      <CommentForm postId={postId} onCommentAdded={fetchComments} />
       {topLevelComments.map((comment) => (
         <CommentItem
           key={comment.id}

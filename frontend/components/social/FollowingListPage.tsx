@@ -6,9 +6,10 @@ import { getFollowing } from '@/api/social'
 import type { User, PaginatedResponse } from '@/types/api'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, UserPlus } from 'lucide-react'
 import { UserCard } from './UserCard'
 import { PaginationControls } from '@/components/ui/pagination'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface FollowingListPageProps {
   userId: string
@@ -66,9 +67,12 @@ export function FollowingListPage({ userId }: FollowingListPageProps) {
             {error}
           </div>
         ) : following.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Not following anyone yet</p>
-          </div>
+          <EmptyState
+            icon={<UserPlus />}
+            title="Not following anyone yet"
+            description="Start following users to see their posts in your feed."
+            size="lg"
+          />
         ) : (
           <>
             <div className="space-y-4">

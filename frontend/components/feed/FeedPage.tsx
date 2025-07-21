@@ -10,6 +10,8 @@ import { PostFilters } from './PostFilters'
 import { Container } from '@/components/layout'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { TrendingPosts } from '@/components/search/TrendingPosts.lazy'
+import { EmptyState } from '@/components/ui/empty-state'
+import { FileText, Users } from 'lucide-react'
 
 export function FeedPage() {
   const { isAuthenticated } = useAuthStore()
@@ -143,12 +145,12 @@ export function FeedPage() {
           />
 
           {posts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground mb-4">No posts in your feed yet</p>
-              <p className="text-sm text-muted-foreground">
-                Follow users to see their posts here
-              </p>
-            </div>
+            <EmptyState
+              icon={<FileText />}
+              title="No posts in your feed"
+              description="Follow users to see their posts here. Start exploring and connect with others!"
+              size="lg"
+            />
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (

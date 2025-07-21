@@ -6,9 +6,10 @@ import { getFollowers } from '@/api/social'
 import type { User, PaginatedResponse } from '@/types/api'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Users } from 'lucide-react'
 import { UserCard } from './UserCard'
 import { PaginationControls } from '@/components/ui/pagination'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface FollowersListPageProps {
   userId: string
@@ -66,9 +67,12 @@ export function FollowersListPage({ userId }: FollowersListPageProps) {
             {error}
           </div>
         ) : followers.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No followers yet</p>
-          </div>
+          <EmptyState
+            icon={<Users />}
+            title="No followers yet"
+            description="When someone follows this user, they'll appear here."
+            size="lg"
+          />
         ) : (
           <>
             <div className="space-y-4">

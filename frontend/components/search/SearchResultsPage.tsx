@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Search, Filter, Loader2 } from 'lucide-react'
+import { Search, Filter, Loader2, FileText, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { EmptyState } from '@/components/ui/empty-state'
 import {
   Select,
   SelectContent,
@@ -257,9 +258,12 @@ export function SearchResultsPage() {
                 )}
               </div>
             ) : (
-              <div className="py-12 text-center text-muted-foreground">
-                <p>No posts found for &quot;{query}&quot;</p>
-              </div>
+              <EmptyState
+                icon={<FileText />}
+                title={`No posts found for "${query}"`}
+                description="Try adjusting your search terms or filters to find what you're looking for."
+                size="md"
+              />
             )}
           </TabsContent>
 
@@ -282,9 +286,12 @@ export function SearchResultsPage() {
                 )}
               </div>
             ) : (
-              <div className="py-12 text-center text-muted-foreground">
-                <p>No users found for &quot;{query}&quot;</p>
-              </div>
+              <EmptyState
+                icon={<Users />}
+                title={`No users found for "${query}"`}
+                description="Try searching with a different username or name."
+                size="md"
+              />
             )}
           </TabsContent>
         </Tabs>
