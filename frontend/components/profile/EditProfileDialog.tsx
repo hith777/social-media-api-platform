@@ -8,6 +8,7 @@ import type { User } from '@/types/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { updateProfile } from '@/api/user'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -84,47 +85,46 @@ export function EditProfileDialog({
       <div className="bg-background rounded-lg border p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
         
-        {error && (
-          <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive mb-4">
-            {error}
-          </div>
-        )}
+        <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+            <FormFieldWrapper
+              label="First Name"
+              error={errors.firstName}
+              description="Maximum 50 characters"
+            >
               <Input
                 id="firstName"
+                aria-invalid={!!errors.firstName}
                 {...register('firstName')}
               />
-              {errors.firstName && (
-                <p className="text-sm text-destructive">{errors.firstName.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+            </FormFieldWrapper>
+            <FormFieldWrapper
+              label="Last Name"
+              error={errors.lastName}
+              description="Maximum 50 characters"
+            >
               <Input
                 id="lastName"
+                aria-invalid={!!errors.lastName}
                 {...register('lastName')}
               />
-              {errors.lastName && (
-                <p className="text-sm text-destructive">{errors.lastName.message}</p>
-              )}
-            </div>
+            </FormFieldWrapper>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
+          <FormFieldWrapper
+            label="Bio"
+            error={errors.bio}
+            description={`${watch('bio')?.length || 0} / 500 characters`}
+          >
             <textarea
               id="bio"
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-invalid={!!errors.bio}
               {...register('bio')}
               maxLength={500}
             />
-            {errors.bio && (
-              <p className="text-sm text-destructive">{errors.bio.message}</p>
-            )}
-          </div>
+          </FormFieldWrapper>
           <div className="flex gap-2 justify-end">
             <Button
               type="button"

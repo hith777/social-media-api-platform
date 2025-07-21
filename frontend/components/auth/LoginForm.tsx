@@ -8,6 +8,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -50,37 +51,35 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {error && (
-        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
-      <div className="space-y-2">
-        <Label htmlFor="identifier">Email or Username</Label>
+      <FormFieldWrapper
+        label="Email or Username"
+        required
+        error={errors.identifier}
+      >
         <Input
           id="identifier"
           type="text"
           placeholder="Enter your email or username"
+          aria-invalid={!!errors.identifier}
           {...register('identifier')}
         />
-        {errors.identifier && (
-          <p className="text-sm text-destructive">{errors.identifier.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+      <FormFieldWrapper
+        label="Password"
+        required
+        error={errors.password}
+      >
         <Input
           id="password"
           type="password"
           placeholder="Enter your password"
+          aria-invalid={!!errors.password}
           {...register('password')}
         />
-        {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? 'Signing in...' : 'Sign in'}

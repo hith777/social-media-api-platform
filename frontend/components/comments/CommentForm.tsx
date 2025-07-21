@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { createComment } from '@/api/comment'
 import { Send } from 'lucide-react'
 
@@ -65,24 +66,21 @@ export function CommentForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-      {error && (
-        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
-      <div className="space-y-2">
+      <FormFieldWrapper
+        error={errors.content}
+        description="Maximum 5000 characters"
+      >
         <Textarea
           {...register('content')}
           placeholder={placeholder}
           className="min-h-[80px] resize-none"
           autoFocus={autoFocus}
           disabled={isSubmitting}
+          aria-invalid={!!errors.content}
         />
-        {errors.content && (
-          <p className="text-sm text-destructive">{errors.content.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
       <div className="flex items-center justify-end gap-2">
         {onCancel && (

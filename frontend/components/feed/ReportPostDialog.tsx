@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { reportPost } from '@/api/post'
 import { showToast } from '@/utils/toast'
 import { Flag } from 'lucide-react'
@@ -109,13 +110,16 @@ export function ReportPostDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason for reporting</Label>
+          <FormFieldWrapper
+            label="Reason for reporting"
+            required
+            error={errors.reason}
+          >
             <Select
               value={reason || ''}
               onValueChange={(value) => setValue('reason', value)}
             >
-              <SelectTrigger id="reason">
+              <SelectTrigger id="reason" aria-invalid={!!errors.reason}>
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
               <SelectContent>
@@ -126,27 +130,22 @@ export function ReportPostDialog({
                 ))}
               </SelectContent>
             </Select>
-            {errors.reason && (
-              <p className="text-sm text-destructive">{errors.reason.message}</p>
-            )}
-          </div>
+          </FormFieldWrapper>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Additional details (optional)</Label>
+          <FormFieldWrapper
+            label="Additional details"
+            error={errors.description}
+            description={`${watch('description')?.length || 0} / 1000 characters`}
+          >
             <Textarea
               id="description"
               placeholder="Provide more context about why you're reporting this post..."
+              aria-invalid={!!errors.description}
               {...register('description')}
               rows={4}
               maxLength={1000}
             />
-            {errors.description && (
-              <p className="text-sm text-destructive">{errors.description.message}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              {watch('description')?.length || 0} / 1000 characters
-            </p>
-          </div>
+          </FormFieldWrapper>
 
           <DialogFooter>
             <Button

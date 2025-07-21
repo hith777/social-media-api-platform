@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { Image as ImageIcon, X } from 'lucide-react'
 import { createPost } from '@/api/post'
 import type { Post } from '@/types/api'
@@ -128,22 +129,23 @@ export function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps)
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
+          <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
-          <div className="space-y-2">
+          <FormFieldWrapper
+            label="What's on your mind?"
+            required
+            error={errors.content}
+            description={`${watch('content')?.length || 0} / 5000 characters`}
+          >
             <textarea
+              id="content"
               className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="What's on your mind?"
+              aria-invalid={!!errors.content}
               {...register('content')}
+              maxLength={5000}
             />
-            {errors.content && (
-              <p className="text-sm text-destructive">{errors.content.message}</p>
-            )}
-          </div>
+          </FormFieldWrapper>
 
           {mediaPreviews.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

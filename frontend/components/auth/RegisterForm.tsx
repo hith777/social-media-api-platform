@@ -8,6 +8,7 @@ import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FormError, FormFieldWrapper } from '@/components/ui/form-error'
 import { register } from '@/api/auth'
 
 const registerSchema = z.object({
@@ -59,78 +60,82 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {error && (
-        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      <FormError error={error} dismissible onDismiss={() => setError(null)} />
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="firstName">First Name (Optional)</Label>
+        <FormFieldWrapper
+          label="First Name"
+          error={errors.firstName}
+          description="Optional"
+        >
           <Input
             id="firstName"
             type="text"
             placeholder="John"
+            aria-invalid={!!errors.firstName}
             {...registerField('firstName')}
           />
-          {errors.firstName && (
-            <p className="text-sm text-destructive">{errors.firstName.message}</p>
-          )}
-        </div>
+        </FormFieldWrapper>
 
-        <div className="space-y-2">
-          <Label htmlFor="lastName">Last Name (Optional)</Label>
+        <FormFieldWrapper
+          label="Last Name"
+          error={errors.lastName}
+          description="Optional"
+        >
           <Input
             id="lastName"
             type="text"
             placeholder="Doe"
+            aria-invalid={!!errors.lastName}
             {...registerField('lastName')}
           />
-          {errors.lastName && (
-            <p className="text-sm text-destructive">{errors.lastName.message}</p>
-          )}
-        </div>
+        </FormFieldWrapper>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      <FormFieldWrapper
+        label="Email"
+        required
+        error={errors.email}
+        description="We'll never share your email with anyone else"
+      >
         <Input
           id="email"
           type="email"
           placeholder="john@example.com"
+          aria-invalid={!!errors.email}
           {...registerField('email')}
         />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
+      <FormFieldWrapper
+        label="Username"
+        required
+        error={errors.username}
+        description="3-20 characters, letters, numbers, and underscores only"
+      >
         <Input
           id="username"
           type="text"
           placeholder="johndoe"
+          aria-invalid={!!errors.username}
           {...registerField('username')}
         />
-        {errors.username && (
-          <p className="text-sm text-destructive">{errors.username.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+      <FormFieldWrapper
+        label="Password"
+        required
+        error={errors.password}
+        description="At least 8 characters with uppercase, lowercase, and number"
+      >
         <Input
           id="password"
           type="password"
           placeholder="Enter a strong password"
+          aria-invalid={!!errors.password}
           {...registerField('password')}
         />
-        {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        )}
-      </div>
+      </FormFieldWrapper>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? 'Creating account...' : 'Create account'}
