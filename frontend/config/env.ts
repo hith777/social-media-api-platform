@@ -49,6 +49,11 @@ export const env = {
   // Feature Flags
   enableAnalytics: getOptionalEnvVar('NEXT_PUBLIC_ENABLE_ANALYTICS', 'false') === 'true',
   enableDebug: getOptionalEnvVar('NEXT_PUBLIC_ENABLE_DEBUG', 'false') === 'true',
+  
+  // Analytics Configuration
+  gaMeasurementId: getOptionalEnvVar('NEXT_PUBLIC_GA_MEASUREMENT_ID', ''),
+  analyticsEndpoint: getOptionalEnvVar('NEXT_PUBLIC_ANALYTICS_ENDPOINT', ''),
+  errorTrackingEndpoint: getOptionalEnvVar('NEXT_PUBLIC_ERROR_TRACKING_ENDPOINT', ''),
 
   // Environment
   isDevelopment: process.env.NODE_ENV === 'development',

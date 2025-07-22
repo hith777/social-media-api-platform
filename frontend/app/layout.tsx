@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import '@/app/globals.css'
 import { ErrorBoundaryWrapper } from '@/components/error/ErrorBoundaryWrapper'
 import { Toaster } from '@/components/ui/toaster'
+import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider'
 import { generateMetadata as generateSEOMetadata, generateWebsiteStructuredData } from '@/utils/seo'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -38,8 +39,10 @@ export default function RootLayout({
           Skip to main content
         </a>
         <ErrorBoundaryWrapper>
-          {children}
-          <Toaster />
+          <AnalyticsProvider>
+            {children}
+            <Toaster />
+          </AnalyticsProvider>
         </ErrorBoundaryWrapper>
       </body>
     </html>

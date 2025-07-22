@@ -13,6 +13,7 @@ import { Image as ImageIcon, X } from 'lucide-react'
 import { createPost } from '@/api/post'
 import type { Post } from '@/types/api'
 import { PostVisibilitySelector } from './PostVisibilitySelector'
+import { trackInteraction } from '@/utils/analytics'
 
 const createPostSchema = z.object({
   content: z.string().min(1, 'Content is required').max(5000, 'Content must be less than 5000 characters'),
@@ -111,6 +112,9 @@ export function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps)
       reset()
       setMediaFiles([])
       setMediaPreviews([])
+      
+      // Track analytics
+      trackInteraction.createPost()
       
       onPostCreated?.(post)
     } catch (err: any) {

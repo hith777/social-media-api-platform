@@ -4,6 +4,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { trackError } from '@/utils/analytics'
 
 interface Props {
   children: ReactNode
@@ -28,6 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
+    
+    // Track error analytics
+    trackError(error, {
+      componentStack: errorInfo.componentStack,
+      errorBoundary: true,
+    })
     
     if (this.props.onError) {
       this.props.onError(error, errorInfo)

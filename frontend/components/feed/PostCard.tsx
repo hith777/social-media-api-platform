@@ -12,6 +12,7 @@ import { togglePostLike } from '@/api/social'
 import { PostActionsMenu } from './PostActionsMenu'
 import { LazyImage } from '@/components/ui/lazy-image'
 import { getLikeButtonLabel, getCommentButtonLabel, getShareButtonLabel } from '@/utils/accessibility'
+import { trackInteraction } from '@/utils/analytics'
 
 interface PostCardProps {
   post: Post
@@ -171,7 +172,10 @@ export function PostCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onComment?.(post.id)}
+            onClick={() => {
+              onComment?.(post.id)
+              trackInteraction.postComment(post.id)
+            }}
             aria-label={getCommentButtonLabel(post.commentsCount)}
             className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >
@@ -182,7 +186,10 @@ export function PostCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onShare?.(post.id)}
+            onClick={() => {
+              onShare?.(post.id)
+              trackInteraction.postShare(post.id)
+            }}
             aria-label={getShareButtonLabel()}
             className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >

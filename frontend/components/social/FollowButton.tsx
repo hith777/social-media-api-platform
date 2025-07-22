@@ -6,6 +6,7 @@ import { UserPlus, UserMinus, Loader2 } from 'lucide-react'
 import { followUser, unfollowUser } from '@/api/social'
 import { useAuthStore } from '@/stores/authStore'
 import { getFollowButtonLabel } from '@/utils/accessibility'
+import { trackInteraction } from '@/utils/analytics'
 
 interface FollowButtonProps {
   userId: string
@@ -46,6 +47,7 @@ export function FollowButton({
         const response = await followUser(userId)
         setIsFollowing(true)
         onFollowChange?.(true, response.followersCount)
+        trackInteraction.followUser(userId)
       }
     } catch (error) {
       console.error('Failed to toggle follow:', error)

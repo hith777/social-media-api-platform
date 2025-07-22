@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { showToast } from '@/utils/toast'
+import { trackError } from '@/utils/analytics'
 
 interface ErrorHandlerOptions {
   showToast?: boolean
@@ -37,6 +38,11 @@ export function useErrorHandler() {
       }
 
       console.error('Error handled:', error)
+
+      // Track error analytics
+      if (error instanceof Error) {
+        trackError(error, options)
+      }
 
       // Log to error reporting service (e.g., Sentry)
       // if (window.Sentry) {

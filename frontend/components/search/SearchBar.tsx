@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { searchUsers, searchPosts } from '@/api/search'
 import type { User, Post } from '@/types/api'
+import { trackInteraction } from '@/utils/analytics'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -51,6 +52,10 @@ export function SearchBar({ onSelect, placeholder = 'Search...', className }: Se
         setUsers(usersResult.data)
         setPosts(postsResult.data)
         setIsOpen(true)
+        
+        // Track search
+        const totalResults = usersResult.data.length + postsResult.data.length
+        trackInteraction.search(query, totalResults)
       } catch (error) {
         console.error('Search error:', error)
       } finally {

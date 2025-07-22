@@ -7,6 +7,7 @@ import {
   setAccessToken,
   setRefreshToken,
 } from '@/utils/tokenManager'
+import { trackAPICall } from '@/utils/analytics'
 
 /**
  * Create and configure Axios instance
@@ -70,6 +71,8 @@ apiClient.interceptors.request.use(
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`
     }
+    // Track request start time for performance monitoring
+    ;(config as InternalAxiosRequestConfig & { __startTime?: number }).__startTime = Date.now()
     return config
   },
   (error) => {
@@ -82,9 +85,22 @@ apiClient.interceptors.request.use(
  */
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Track successful API calls
+    const config = response.config as InternalAxiosRequestConfig & { __startTime?: number }
+    if (config.__startTime) {
+      const duration = Date.now() - config.__startTime
+      trackAPICall(config.url || 'unknown', duration, true)
+    }
     return response
   },
   async (error) => {
+    // Track failed API calls
+    const config = error.config as InternalAxiosRequestConfig & { __startTime?: number }
+    if (config?.__startTime) {
+      const duration = Date.now() - config.__startTime
+      trackAPICall(config.url || 'unknown', duration, false)
+    }
+
     const originalRequest = error.config
 
     // Handle 401 Unauthorized - token expired or invalid
