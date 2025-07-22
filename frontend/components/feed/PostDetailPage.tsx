@@ -7,7 +7,19 @@ import type { Post } from '@/types/api'
 import { PostCard } from './PostCard'
 import { Container } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { CommentList } from '@/components/comments/CommentList.lazy'
+import dynamic from 'next/dynamic'
+
+// Lazy load comment list
+const CommentList = dynamic(() => import('@/components/comments/CommentList').then(mod => ({ default: mod.CommentList })), {
+  loading: () => (
+    <div className="space-y-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="h-20 bg-muted rounded animate-pulse" />
+      ))}
+    </div>
+  ),
+  ssr: false,
+})
 import { CommentForm } from '@/components/comments/CommentForm'
 
 interface PostDetailPageProps {

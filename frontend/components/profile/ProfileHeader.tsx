@@ -2,11 +2,18 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import type { User } from '@/types/api'
 import { Button } from '@/components/ui/button'
-import { EditProfileDialog } from './EditProfileDialog.lazy'
-import { AvatarUpload } from './AvatarUpload'
 import { LazyImage } from '@/components/ui/lazy-image'
+
+// Lazy load heavy components
+const EditProfileDialog = dynamic(() => import('./EditProfileDialog').then(mod => ({ default: mod.EditProfileDialog })), {
+  ssr: false,
+})
+const AvatarUpload = dynamic(() => import('./AvatarUpload').then(mod => ({ default: mod.AvatarUpload })), {
+  ssr: false,
+})
 
 interface ProfileHeaderProps {
   user: User
