@@ -14,10 +14,14 @@ const PostDetailPage = dynamic(() => import('@/components/feed/PostDetailPage').
   ssr: true,
 })
 
-export const metadata: Metadata = {
-  title: 'Post | Social Media Platform',
-  description: 'View post details',
-}
+import { generateMetadata } from '@/utils/seo'
+
+export const metadata: Metadata = generateMetadata({
+  title: 'Post',
+  description: 'View post details, comments, and interactions. Engage with the community and share your thoughts.',
+  url: '/posts',
+  type: 'article',
+})
 
 export default function PostDetail({
   params,
