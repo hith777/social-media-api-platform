@@ -18,6 +18,7 @@ import { ReportPostDialog } from './ReportPostDialog'
 import { BlockUserDialog } from '@/components/social/BlockUserDialog'
 import { getUserProfile } from '@/api/user'
 import { useState, useEffect } from 'react'
+import { getPostActionsLabel } from '@/utils/accessibility'
 
 interface PostActionsMenuProps {
   post: Post
@@ -92,8 +93,14 @@ export function PostActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8"
+          aria-label={getPostActionsLabel(isOwnPost)}
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          <span className="sr-only">{getPostActionsLabel(isOwnPost)}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

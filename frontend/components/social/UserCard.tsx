@@ -74,7 +74,8 @@ export function UserCard({
             {showFollowButton && !isOwnProfile && (
               <FollowButton
                 userId={user.id}
-                isFollowing={false}
+                isFollowing={user.isFollowing || false}
+                username={user.username}
                 size="sm"
                 variant="outline"
               />
@@ -158,7 +159,8 @@ export function UserCard({
             {showFollowButton && !isOwnProfile && (
               <FollowButton
                 userId={user.id}
-                isFollowing={false}
+                isFollowing={user.isFollowing || false}
+                username={user.username}
                 size="sm"
               />
             )}

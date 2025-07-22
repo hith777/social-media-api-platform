@@ -170,6 +170,10 @@ export function SearchBar({ onSelect, placeholder = 'Search...', className }: Se
               setIsOpen(true)
             }
           }}
+          aria-label="Search for users and posts"
+          aria-expanded={isOpen}
+          aria-controls="search-results"
+          aria-autocomplete="list"
           className="pl-10 pr-10"
         />
         {query && (
@@ -192,7 +196,12 @@ export function SearchBar({ onSelect, placeholder = 'Search...', className }: Se
       </div>
 
       {showDropdown && (
-        <div className="absolute top-full z-50 mt-2 w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-lg border bg-popover shadow-lg">
+        <div 
+          id="search-results"
+          role="listbox"
+          aria-label="Search results"
+          className="absolute top-full z-50 mt-2 w-full max-w-[calc(100vw-2rem)] sm:max-w-md rounded-lg border bg-popover shadow-lg"
+        >
           {isLoading ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               <Loader2 className="mx-auto h-5 w-5 animate-spin" />

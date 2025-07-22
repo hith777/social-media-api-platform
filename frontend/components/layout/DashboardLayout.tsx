@@ -19,7 +19,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <Header />
       <div className="flex pt-16">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 lg:ml-64 transition-all duration-300">
+        <main id="main-content" role="main" className="flex-1 lg:ml-64 transition-all duration-300">
           {/* Mobile menu button */}
           <div className="lg:hidden fixed top-20 left-4 z-30">
             <Button

@@ -17,6 +17,7 @@ import type { User } from '@/types/api'
 interface BlockButtonProps {
   userId: string
   isBlocked?: boolean
+  username?: string
   onBlockChange?: (isBlocked: boolean) => void
   variant?: 'default' | 'outline' | 'ghost'
   size?: 'default' | 'sm' | 'lg' | 'icon'
@@ -27,6 +28,7 @@ interface BlockButtonProps {
 export function BlockButton({
   userId,
   isBlocked: initialIsBlocked = false,
+  username = 'user',
   onBlockChange,
   variant = 'ghost',
   size = 'sm',
@@ -120,6 +122,7 @@ export function BlockButton({
         variant={variant}
         size={size}
         onClick={handleOpenDialog}
+        aria-label={getBlockButtonLabel(isBlocked, username)}
         className={className}
       >
         {isBlocked ? (

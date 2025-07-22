@@ -31,6 +31,8 @@ export function Sidebar({ isOpen = false, onClose, className }: SidebarProps) {
 
       {/* Sidebar */}
       <aside
+        role="complementary"
+        aria-label="Sidebar navigation"
         className={cn(
           'fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] w-64 border-r bg-background transition-transform duration-300 ease-in-out lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',

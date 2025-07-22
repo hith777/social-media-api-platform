@@ -34,7 +34,7 @@ export function Navbar({ className }: NavbarProps) {
   const { user } = useAuthStore()
 
   return (
-    <nav className={cn('flex items-center gap-1', className)}>
+    <nav role="navigation" aria-label="Main navigation" className={cn('flex items-center gap-1', className)}>
       {navItems.map((item) => {
         const Icon = item.icon
         const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')

@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button'
 import { UserPlus, UserMinus, Loader2 } from 'lucide-react'
 import { followUser, unfollowUser } from '@/api/social'
 import { useAuthStore } from '@/stores/authStore'
+import { getFollowButtonLabel } from '@/utils/accessibility'
 
 interface FollowButtonProps {
   userId: string
   isFollowing: boolean
+  username?: string
   onFollowChange?: (isFollowing: boolean, followersCount: number) => void
   variant?: 'default' | 'outline' | 'ghost'
   size?: 'default' | 'sm' | 'lg' | 'icon'
@@ -18,6 +20,7 @@ interface FollowButtonProps {
 export function FollowButton({
   userId,
   isFollowing: initialIsFollowing,
+  username = 'user',
   onFollowChange,
   variant = 'default',
   size = 'default',
@@ -59,6 +62,7 @@ export function FollowButton({
       size={size}
       onClick={handleFollow}
       disabled={isLoading}
+      aria-label={getFollowButtonLabel(isFollowing, username)}
       className={className}
     >
       {isLoading ? (

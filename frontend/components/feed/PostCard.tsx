@@ -11,6 +11,7 @@ import { Heart, MessageCircle, Share2 } from 'lucide-react'
 import { togglePostLike } from '@/api/social'
 import { PostActionsMenu } from './PostActionsMenu'
 import { LazyImage } from '@/components/ui/lazy-image'
+import { getLikeButtonLabel, getCommentButtonLabel, getShareButtonLabel } from '@/utils/accessibility'
 
 interface PostCardProps {
   post: Post
@@ -151,38 +152,42 @@ export function PostCard({
           </div>
         )}
 
-        <div className="flex items-center gap-2 sm:gap-4 pt-2 border-t">
+        <div className="flex items-center gap-2 sm:gap-4 pt-2 border-t" role="group" aria-label="Post actions">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLike}
             disabled={isLiking}
+            aria-label={getLikeButtonLabel(isLiked, likesCount)}
             className={`gap-1 sm:gap-2 flex-1 sm:flex-initial ${isLiked ? 'text-red-500' : ''}`}
           >
             <Heart
               className={`h-4 w-4 sm:h-5 sm:w-5 ${isLiked ? 'fill-current' : ''}`}
+              aria-hidden="true"
             />
-            <span className="text-xs sm:text-sm">{likesCount}</span>
+            <span className="text-xs sm:text-sm" aria-hidden="true">{likesCount}</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onComment?.(post.id)}
+            aria-label={getCommentButtonLabel(post.commentsCount)}
             className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >
-            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-xs sm:text-sm">{post.commentsCount}</span>
+            <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+            <span className="text-xs sm:text-sm" aria-hidden="true">{post.commentsCount}</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onShare?.(post.id)}
+            aria-label={getShareButtonLabel()}
             className="gap-1 sm:gap-2 flex-1 sm:flex-initial"
           >
-            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="hidden sm:inline">Share</span>
+            <Share2 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+            <span className="hidden sm:inline" aria-hidden="true">Share</span>
           </Button>
         </div>
       </CardContent>
