@@ -19,32 +19,50 @@ interface CommentListProps {
 export function CommentList({ postId, onCommentUpdate }: CommentListProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState<PaginatedResponse<Comment>['pagination'] | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const fetchComments = async () => {
-    setIsLoading(true)
+  const fetchComments = async (page: number = 1, append: boolean = false) => {
+    if (append) {
+      setIsLoadingMore(true)
+    } else {
+      setIsLoading(true)
+    }
     setError(null)
     try {
-      const response = await getPostComments(postId, { page: 1, limit: 50 })
-      setComments(response.data)
+      const response = await getPostComments(postId, { page, limit: 50 })
+      if (append) {
+        setComments((prev) => [...prev, ...response.data])
+      } else {
+        setComments(response.data)
+      }
       setPagination(response.pagination)
+      setCurrentPage(page)
     } catch (err: any) {
       setError(err.message || 'Failed to load comments')
     } finally {
       setIsLoading(false)
+      setIsLoadingMore(false)
+    }
+  }
+
+  const handleLoadMore = () => {
+    if (pagination?.hasNext && !isLoadingMore) {
+      fetchComments(currentPage + 1, true)
     }
   }
 
   useEffect(() => {
     if (postId) {
-      fetchComments()
+      fetchComments(1, false)
     }
   }, [postId])
 
   useEffect(() => {
     if (onCommentUpdate) {
-      fetchComments()
+      fetchComments(1, false)
     }
   }, [onCommentUpdate])
 
@@ -111,11 +129,19 @@ export function CommentList({ postId, onCommentUpdate }: CommentListProps) {
 
       {pagination && pagination.hasNext && (
         <div className="flex justify-center">
-          <Button variant="outline" onClick={() => {
-            // TODO: Implement load more comments
-            console.log('Load more comments')
-          }}>
-            Load More Comments
+          <Button
+            variant="outline"
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? (
+              <>
+                <LoadingSpinner size="sm" className="mr-2" />
+                Loading...
+              </>
+            ) : (
+              'Load More Comments'
+            )}
           </Button>
         </div>
       )}

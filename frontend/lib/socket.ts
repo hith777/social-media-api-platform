@@ -39,11 +39,15 @@ export function initializeSocket(): Socket | null {
     })
 
     socket.on('connect', () => {
-      console.log('Socket.IO connected:', socket?.id)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Socket.IO connected:', socket?.id)
+      }
     })
 
     socket.on('disconnect', (reason) => {
-      console.log('Socket.IO disconnected:', reason)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Socket.IO disconnected:', reason)
+      }
     })
 
     socket.on('connect_error', (error) => {

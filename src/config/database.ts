@@ -8,12 +8,12 @@ import logger from './logger';
  * For PostgreSQL, Prisma uses a connection pool with these defaults:
  * - connection_limit: 10 (can be set via ?connection_limit=N)
  * - pool_timeout: 10 seconds
- * 
+ *
  * Note: For production, consider using a connection pooler like PgBouncer
  */
 function buildConnectionString(): string {
   const baseUrl = env.DATABASE_URL;
-  
+
   // If DATABASE_URL already has connection parameters, use it as-is
   if (baseUrl.includes('?') || baseUrl.includes('connection_limit')) {
     return baseUrl;
@@ -25,7 +25,7 @@ function buildConnectionString(): string {
 
   if (poolSize || poolTimeout) {
     const url = new URL(baseUrl);
-    
+
     if (poolSize && !url.searchParams.has('connection_limit')) {
       // Connection pool size (recommended: 1-10 per CPU core)
       url.searchParams.set('connection_limit', poolSize.toString());
@@ -51,11 +51,8 @@ function buildConnectionString(): string {
  * Prisma Client configuration with connection pooling
  */
 const prismaClientOptions: Prisma.PrismaClientOptions = {
-  log:
-    process.env.NODE_ENV === 'development'
-      ? ['query', 'error', 'warn']
-      : ['error'],
-  
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+
   // Connection pool configuration
   datasources: {
     db: {
@@ -84,7 +81,7 @@ export async function getConnectionPoolStats(): Promise<ConnectionPoolStats> {
   try {
     // Execute a lightweight query to check connection health
     await prisma.$queryRaw`SELECT 1`;
-    
+
     // Prisma manages the pool internally, so we return estimated stats
     // In production, you might want to use pg_stat_activity or similar
     return {
@@ -148,23 +145,39 @@ export async function healthCheck(): Promise<{
 }
 
 // Handle graceful shutdown
-process.on('beforeExit', async () => {
+process.on('beforeExit', () => {
   logger.info('Disconnecting Prisma client...');
-  await prisma.$disconnect();
+  prisma.$disconnect().catch((error) => {
+    logger.error('Error disconnecting Prisma client:', error);
+  });
 });
 
 // Handle SIGINT (Ctrl+C)
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   logger.info('Received SIGINT, disconnecting Prisma client...');
-  await prisma.$disconnect();
-  process.exit(0);
+  prisma
+    .$disconnect()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error('Error disconnecting Prisma client:', error);
+      process.exit(1);
+    });
 });
 
 // Handle SIGTERM
-process.on('SIGTERM', async () => {
+process.on('SIGTERM', () => {
   logger.info('Received SIGTERM, disconnecting Prisma client...');
-  await prisma.$disconnect();
-  process.exit(0);
+  prisma
+    .$disconnect()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      logger.error('Error disconnecting Prisma client:', error);
+      process.exit(1);
+    });
 });
 
 // Log connection pool configuration on startup
@@ -176,7 +189,3 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default prisma;
-
-
-
-

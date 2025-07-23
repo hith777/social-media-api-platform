@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 import { LazyImage } from '@/components/ui/lazy-image'
+import { KeyboardShortcutsHelp } from '@/components/keyboard/KeyboardShortcutsHelp'
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuthStore()
@@ -49,6 +50,7 @@ export function Header() {
 
           {/* User Menu - Visible on all screens */}
           <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+              <KeyboardShortcutsHelp />
               <Link href={`/profile/${user.id}`} className="flex items-center gap-2">
                 {user.avatar ? (
                   <LazyImage

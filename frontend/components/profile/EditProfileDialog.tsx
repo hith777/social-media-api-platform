@@ -55,6 +55,7 @@ export function EditProfileDialog({
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {

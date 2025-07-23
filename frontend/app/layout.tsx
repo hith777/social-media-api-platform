@@ -4,6 +4,7 @@ import '@/app/globals.css'
 import { ErrorBoundaryWrapper } from '@/components/error/ErrorBoundaryWrapper'
 import { Toaster } from '@/components/ui/toaster'
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider'
+import { GlobalKeyboardShortcuts } from '@/components/keyboard/GlobalKeyboardShortcuts'
 import { generateMetadata as generateSEOMetadata, generateWebsiteStructuredData } from '@/utils/seo'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -40,6 +41,7 @@ export default function RootLayout({
         </a>
         <ErrorBoundaryWrapper>
           <AnalyticsProvider>
+            <GlobalKeyboardShortcuts />
             {children}
             <Toaster />
           </AnalyticsProvider>

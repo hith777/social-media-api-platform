@@ -95,6 +95,7 @@ export function useKeyboardNavigation({
 
 /**
  * Hook for handling keyboard shortcuts (with modifiers)
+ * Supports both Ctrl (Windows/Linux) and Cmd (Mac) for ctrl option
  */
 export function useKeyboardShortcut(
   key: string,
@@ -123,12 +124,15 @@ export function useKeyboardShortcut(
         return
       }
 
+      // For ctrl option, accept either Ctrl or Cmd (Mac)
+      const ctrlPressed = ctrl ? (event.ctrlKey || event.metaKey) : !event.ctrlKey && !event.metaKey
+
       if (
         event.key.toLowerCase() === key.toLowerCase() &&
-        event.ctrlKey === ctrl &&
+        ctrlPressed &&
         event.shiftKey === shift &&
         event.altKey === alt &&
-        event.metaKey === meta
+        (meta ? event.metaKey : !event.metaKey || ctrl) // Don't require meta if ctrl is set
       ) {
         event.preventDefault()
         callback()

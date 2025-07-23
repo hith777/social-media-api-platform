@@ -52,24 +52,28 @@ export function PostDetailPage({ postId }: PostDetailPageProps) {
     }
   }, [postId])
 
-  const handleLike = (postId: string) => {
-    // TODO: Implement like functionality
-    console.log('Like post:', postId)
+  const handleLike = (postId: string, isLiked: boolean, likesCount: number) => {
+    // Update local post state
+    if (post && post.id === postId) {
+      setPost({ ...post, isLiked, likesCount })
+    }
   }
 
   const handleComment = (postId: string) => {
-    // TODO: Scroll to comments section
-    console.log('Comment on post:', postId)
+    // Scroll to comments section
+    const commentsSection = document.getElementById('comments-section')
+    if (commentsSection) {
+      commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      commentsSection.focus()
+    }
   }
 
   const handleShare = (postId: string) => {
-    // TODO: Implement share functionality
-    console.log('Share post:', postId)
-  }
-
-  const handleMore = (postId: string) => {
-    // TODO: Implement more options menu
-    console.log('More options for post:', postId)
+    // Copy post URL to clipboard
+    const postUrl = `${window.location.origin}/posts/${postId}`
+    navigator.clipboard.writeText(postUrl).then(() => {
+      // Toast notification would be shown by PostCard if implemented
+    })
   }
 
   if (isLoading) {
@@ -124,7 +128,6 @@ export function PostDetailPage({ postId }: PostDetailPageProps) {
           onLike={handleLike}
           onComment={handleComment}
           onShare={handleShare}
-          onMore={handleMore}
         />
 
         {/* Comments Section */}

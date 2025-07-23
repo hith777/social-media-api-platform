@@ -110,7 +110,7 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
   const emit = useCallback((event: string, data?: any) => {
     if (socketRef.current?.connected) {
       socketRef.current.emit(event, data)
-    } else {
+    } else if (process.env.NODE_ENV === 'development') {
       console.warn(`Cannot emit ${event}: socket not connected`)
     }
   }, [])

@@ -14,6 +14,7 @@ import { createPost } from '@/api/post'
 import type { Post } from '@/types/api'
 import { PostVisibilitySelector } from './PostVisibilitySelector'
 import { trackInteraction } from '@/utils/analytics'
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation'
 
 const createPostSchema = z.object({
   content: z.string().min(1, 'Content is required').max(5000, 'Content must be less than 5000 characters'),
@@ -125,6 +126,16 @@ export function CreatePostForm({ onPostCreated, onCancel }: CreatePostFormProps)
   }
 
   const visibility = watch('visibility')
+
+  // Keyboard shortcuts
+  useKeyboardNavigation({
+    onEscape: () => {
+      if (!isSubmitting && onCancel) {
+        onCancel()
+      }
+    },
+    enabled: true,
+  })
 
   return (
     <Card>

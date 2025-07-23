@@ -76,6 +76,8 @@ export function FeedPage() {
     setCurrentPage(1)
   }, [])
 
+  const router = useRouter()
+
   // Keyboard shortcuts
   useKeyboardShortcut('k', () => router.push('/search'), { ctrl: true, enabled: isAuthenticated })
   useKeyboardShortcut('/', () => {
@@ -95,24 +97,28 @@ export function FeedPage() {
     onLoadMore: loadMore,
   })
 
-  const handleLike = (postId: string) => {
-    // TODO: Implement like functionality
-    console.log('Like post:', postId)
+  const handleLike = (postId: string, isLiked: boolean, likesCount: number) => {
+    // Update local state if needed
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? { ...post, isLiked, likesCount }
+          : post
+      )
+    )
   }
 
   const handleComment = (postId: string) => {
-    // TODO: Implement comment navigation
-    console.log('Comment on post:', postId)
+    // Navigate to post detail page to view/add comments
+    router.push(`/posts/${postId}`)
   }
 
   const handleShare = (postId: string) => {
-    // TODO: Implement share functionality
-    console.log('Share post:', postId)
-  }
-
-  const handleMore = (postId: string) => {
-    // TODO: Implement more options menu
-    console.log('More options for post:', postId)
+    // Copy post URL to clipboard
+    const postUrl = `${window.location.origin}/posts/${postId}`
+    navigator.clipboard.writeText(postUrl).then(() => {
+      // Toast notification would be shown by PostCard if implemented
+    })
   }
 
   if (!isAuthenticated) {
@@ -186,7 +192,6 @@ export function FeedPage() {
                   onLike={handleLike}
                   onComment={handleComment}
                   onShare={handleShare}
-                  onMore={handleMore}
                 />
               ))}
             </div>
