@@ -10,7 +10,7 @@ const router = Router();
 // Basic health check
 router.get(
   '/',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -23,7 +23,7 @@ router.get(
 // Detailed health check with service status
 router.get(
   '/detailed',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     const healthStatus = {
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -66,7 +66,7 @@ router.get(
 // Readiness check (for Kubernetes/Docker)
 router.get(
   '/ready',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     try {
       // Check if database is ready
       await prisma.$queryRaw`SELECT 1`;
@@ -94,7 +94,7 @@ router.get(
 // Liveness check (for Kubernetes/Docker)
 router.get(
   '/live',
-  asyncHandler(async (req: Request, res: Response) => {
+  asyncHandler(async (_req: Request, res: Response) => {
     res.status(200).json({
       status: 'alive',
       timestamp: new Date().toISOString(),

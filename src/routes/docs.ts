@@ -68,7 +68,7 @@ router.use('/swagger', swaggerUi.serve);
 router.get('/swagger', swaggerUi.setup(swaggerSpec, { customCss: '.swagger-ui .topbar { display: none }' }));
 
 // Swagger JSON
-router.get('/swagger.json', (req: Request, res: Response) => {
+router.get('/swagger.json', (_req: Request, res: Response) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });

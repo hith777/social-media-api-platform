@@ -19,7 +19,7 @@ export const errorHandler = (
   err: Error | AppError | ZodError | Prisma.PrismaClientKnownRequestError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   // Log error
   logger.error('Error occurred:', {

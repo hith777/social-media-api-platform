@@ -1,4 +1,3 @@
-import { Request, Response } from 'express';
 // Content controller - to be implemented in Phase 3
 
 export const contentController = {

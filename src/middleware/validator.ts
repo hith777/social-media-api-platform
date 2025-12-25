@@ -10,7 +10,7 @@ type RequestValidationSchema = z.ZodObject<{
 }>;
 
 export const validate = (schema: RequestValidationSchema) => {
-  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  return asyncHandler(async (req: Request, _res: Response, next: NextFunction) => {
     try {
       // Validate request body, query, and params
       const validatedData = await schema.parseAsync({
@@ -24,10 +24,10 @@ export const validate = (schema: RequestValidationSchema) => {
         req.body = validatedData.body;
       }
       if (validatedData.query) {
-        req.query = validatedData.query;
+        req.query = validatedData.query as typeof req.query;
       }
       if (validatedData.params) {
-        req.params = validatedData.params;
+        req.params = validatedData.params as typeof req.params;
       }
 
       next();

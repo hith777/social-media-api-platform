@@ -32,7 +32,7 @@ app.use(compression());
 app.use(apiLimiter);
 
 // Basic route
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     message: 'Social Media API',
     version: '1.0.0',
